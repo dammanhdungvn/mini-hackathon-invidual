@@ -1,1 +1,1 @@
-# mini-hackathon-invidual
+# Mini Hackathon Day06 AI IN ACTION
