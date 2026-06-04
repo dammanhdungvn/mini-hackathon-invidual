@@ -45,6 +45,7 @@ export default function LoginPage() {
         <form className="mt-8 space-y-6" onSubmit={handleLogin}>
           <div className="space-y-4">
             <div>
+              <label htmlFor="email" className="sr-only">Email address</label>
               <Input
                 id="email"
                 name="email"
@@ -54,10 +55,12 @@ export default function LoginPage() {
                 placeholder="Email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                disabled={isLoading}
                 className="bg-surface border-border"
               />
             </div>
             <div>
+              <label htmlFor="password" className="sr-only">Password</label>
               <Input
                 id="password"
                 name="password"
@@ -67,6 +70,7 @@ export default function LoginPage() {
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                disabled={isLoading}
                 className="bg-surface border-border"
               />
             </div>

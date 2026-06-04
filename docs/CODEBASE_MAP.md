@@ -245,7 +245,7 @@ These are **Shadcn/UI components** — do not modify their internals directly.
 
 ## 5. Database Map
 
-**Migration file:** [`supabase/migrations/001_initial_schema.sql`](file:///c:/Users/damma/Downloads/WorkSpace/AI-IN-ACTION/day06/mini-hackathon-invidual/supabase/migrations/001_initial_schema.sql)
+**Migration files:** [`supabase/migrations/001_initial_schema.sql`](file:///c:/Users/damma/Downloads/WorkSpace/AI-IN-ACTION/day06/mini-hackathon-invidual/supabase/migrations/001_initial_schema.sql), [`supabase/migrations/002_rls_and_indexes.sql`](file:///c:/Users/damma/Downloads/WorkSpace/AI-IN-ACTION/day06/mini-hackathon-invidual/supabase/migrations/002_rls_and_indexes.sql)
 
 ### Tables & Relationships
 

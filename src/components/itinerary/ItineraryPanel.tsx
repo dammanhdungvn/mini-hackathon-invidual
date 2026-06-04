@@ -33,6 +33,7 @@ export function ItineraryPanel({ tripId }: ItineraryPanelProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [regeneratingDay, setRegeneratingDay] = useState<number | null>(null)
+  const [dayErrors, setDayErrors] = useState<Record<number, string | null>>({})
 
   // ── Load trip data ────────────────────────────────────────────────────────
 
@@ -123,6 +124,7 @@ export function ItineraryPanel({ tripId }: ItineraryPanelProps) {
 
   const handleRegenerateDay = useCallback(async (dayNumber: number) => {
     setRegeneratingDay(dayNumber)
+    setDayErrors(prev => ({ ...prev, [dayNumber]: null }))
     try {
       const res = await fetch('/api/ai/regenerate-day', {
         method: 'POST',
@@ -148,6 +150,11 @@ export function ItineraryPanel({ tripId }: ItineraryPanelProps) {
           ),
         }
       })
+    } catch (err) {
+      setDayErrors(prev => ({
+        ...prev,
+        [dayNumber]: err instanceof Error ? err.message : 'Regeneration failed'
+      }))
     } finally {
       setRegeneratingDay(null)
     }
@@ -203,6 +210,7 @@ export function ItineraryPanel({ tripId }: ItineraryPanelProps) {
                 onRemoveItem={handleRemoveItem}
                 onRegenerateDay={handleRegenerateDay}
                 isRegenerating={regeneratingDay === day.day_number}
+                error={dayErrors[day.day_number] ?? undefined}
               />
             ))
         )}

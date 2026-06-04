@@ -143,7 +143,7 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
     .eq('id', params.itemId)
 
   if (deleteErr) {
-    return Response.json({ error: deleteErr.message, code: 'DB_ERROR' }, { status: 500 })
+    return Response.json({ error: 'Failed to delete the itinerary item.', code: 'DB_ERROR' }, { status: 500 })
   }
 
   // Resequence siblings in the same day

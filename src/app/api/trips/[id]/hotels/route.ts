@@ -101,7 +101,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
   } catch (err) {
     console.error('[/api/trips/[id]/hotels]', err)
     return Response.json(
-      { error: err instanceof Error ? err.message : 'Save failed', code: 'SAVE_ERROR' },
+      { error: 'Failed to save selected hotel.', code: 'SAVE_ERROR' },
       { status: 500 }
     )
   }
@@ -136,7 +136,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     .order('rank', { ascending: true })
 
   if (error) {
-    return Response.json({ error: error.message, code: 'DB_ERROR' }, { status: 500 })
+    console.error('[/api/trips/[id]/hotels GET]', error)
+    return Response.json({ error: 'Failed to retrieve selected hotels.', code: 'DB_ERROR' }, { status: 500 })
   }
 
   return Response.json({ hotels: hotels ?? [] })

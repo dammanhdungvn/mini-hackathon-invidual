@@ -189,7 +189,7 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     console.error('[regenerate-day]', err)
     return Response.json(
-      { error: err instanceof Error ? err.message : 'Regeneration failed', code: 'REGENERATION_ERROR' },
+      { error: 'Failed to regenerate day. Please try again later.', code: 'REGENERATION_ERROR' },
       { status: 500 }
     )
   }

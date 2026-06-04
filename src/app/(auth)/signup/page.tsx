@@ -51,6 +51,7 @@ export default function SignupPage() {
         <form className="mt-8 space-y-6" onSubmit={handleSignup}>
           <div className="space-y-4">
             <div>
+              <label htmlFor="name" className="sr-only">Full Name</label>
               <Input
                 id="name"
                 name="name"
@@ -60,10 +61,12 @@ export default function SignupPage() {
                 placeholder="Full Name"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
+                disabled={isLoading}
                 className="bg-surface border-border"
               />
             </div>
             <div>
+              <label htmlFor="email" className="sr-only">Email address</label>
               <Input
                 id="email"
                 name="email"
@@ -73,10 +76,12 @@ export default function SignupPage() {
                 placeholder="Email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                disabled={isLoading}
                 className="bg-surface border-border"
               />
             </div>
             <div>
+              <label htmlFor="password" className="sr-only">Password</label>
               <Input
                 id="password"
                 name="password"
@@ -86,6 +91,7 @@ export default function SignupPage() {
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                disabled={isLoading}
                 className="bg-surface border-border"
               />
             </div>

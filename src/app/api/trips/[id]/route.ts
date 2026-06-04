@@ -40,7 +40,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
     .order('day_number', { ascending: true })
 
   if (daysErr) {
-    return Response.json({ error: daysErr.message, code: 'DB_ERROR' }, { status: 500 })
+    return Response.json({ error: 'Failed to retrieve trip itinerary details.', code: 'DB_ERROR' }, { status: 500 })
   }
 
   const dayIds = (days ?? []).map(d => d.id)
@@ -54,7 +54,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
     : { data: [], error: null }
 
   if (itemsErr) {
-    return Response.json({ error: itemsErr.message, code: 'DB_ERROR' }, { status: 500 })
+    return Response.json({ error: 'Failed to retrieve trip activities.', code: 'DB_ERROR' }, { status: 500 })
   }
 
   // Fetch hotel for context
@@ -138,7 +138,7 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
     .eq('user_id', user.id)
 
   if (deleteErr) {
-    return Response.json({ error: deleteErr.message, code: 'DB_ERROR' }, { status: 500 })
+    return Response.json({ error: 'Failed to delete the trip.', code: 'DB_ERROR' }, { status: 500 })
   }
 
   return new Response(null, { status: 204 })

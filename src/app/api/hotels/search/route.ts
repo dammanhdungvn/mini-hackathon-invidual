@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
   } catch (err) {
     console.error('[/api/hotels/search]', err)
     return Response.json(
-      { error: err instanceof Error ? err.message : 'Hotel search failed', code: 'SEARCH_ERROR' },
+      { error: 'Failed to search hotels. Please try again later.', code: 'SEARCH_ERROR' },
       { status: 500 }
     )
   }

@@ -22,6 +22,7 @@ interface DayColumnProps {
   onRegenerateDay: (dayNumber: number) => Promise<void>
   isRegenerating?: boolean
   isLoading?: boolean
+  error?: string
 }
 
 export function DayColumn({
@@ -33,6 +34,7 @@ export function DayColumn({
   onRegenerateDay,
   isRegenerating = false,
   isLoading = false,
+  error,
 }: DayColumnProps) {
   const items = day.items ?? []
   const formattedDate = formatDate(day.date)
@@ -83,6 +85,13 @@ export function DayColumn({
       {/* Notes */}
       {day.notes && (
         <p className="day-column__notes">{day.notes}</p>
+      )}
+
+      {/* Regeneration error banner */}
+      {error && (
+        <div className="day-column__error-banner text-accent-warning text-sm bg-accent-warning/10 p-3 rounded-xl mb-4 flex items-center justify-between" role="alert">
+          <span>⚠️ {error}</span>
+        </div>
       )}
 
       {/* Activity list */}

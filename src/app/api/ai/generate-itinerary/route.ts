@@ -174,7 +174,7 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     console.error('[generate-itinerary]', err)
     return Response.json(
-      { error: err instanceof Error ? err.message : 'Generation failed', code: 'GENERATION_ERROR' },
+      { error: 'Failed to generate itinerary. Please try a different prompt or try again later.', code: 'GENERATION_ERROR' },
       { status: 500 }
     )
   }

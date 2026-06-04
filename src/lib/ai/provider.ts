@@ -25,10 +25,34 @@ import type { LanguageModel, EmbeddingModel } from 'ai'
 type SupportedProvider = 'gemini' | 'openai' | 'qwen'
 
 function getProvider(): SupportedProvider {
-  const p = (process.env.AI_PROVIDER ?? 'gemini').toLowerCase()
-  if (p === 'openai' || p === 'qwen' || p === 'gemini') return p
-  console.warn(`[ai/provider] Unknown AI_PROVIDER "${p}" — falling back to "gemini"`)
-  return 'gemini'
+  const envVal = process.env.AI_PROVIDER
+  // Default to 'gemini' if unset
+  const p = (envVal ?? 'gemini').toLowerCase()
+  
+  if (p !== 'openai' && p !== 'qwen' && p !== 'gemini') {
+    throw new Error(
+      `[ai/provider] Invalid AI_PROVIDER "${envVal}". Supported values are: "gemini", "openai", "qwen".`
+    )
+  }
+
+  // Strict check for required keys based on the active provider
+  if (p === 'gemini' && !process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
+    throw new Error(
+      `[ai/provider] Missing required environment variable GOOGLE_GENERATIVE_AI_API_KEY for "gemini" provider.`
+    )
+  }
+  if (p === 'openai' && !process.env.OPENAI_API_KEY) {
+    throw new Error(
+      `[ai/provider] Missing required environment variable OPENAI_API_KEY for "openai" provider.`
+    )
+  }
+  if (p === 'qwen' && !process.env.QWEN_API_KEY) {
+    throw new Error(
+      `[ai/provider] Missing required environment variable QWEN_API_KEY for "qwen" provider.`
+    )
+  }
+
+  return p
 }
 
 // ─── Model factory ────────────────────────────────────────────────────────────

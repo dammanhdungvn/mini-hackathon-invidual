@@ -167,11 +167,30 @@ export function ActivityCard({ item, onUpdate, onRemove, isLoading = false }: Ac
           </div>
         )}
 
+        {/* Action Error display in view mode */}
+        {error && !isEditing && (
+          <div className="activity-card__error" role="alert">
+            <span aria-hidden="true">⚠️</span> {error}
+            <button
+              className="activity-card__error-clear"
+              onClick={() => setError(null)}
+              aria-label="Clear error"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
         {/* Edit form (inline) */}
         {isEditing && (
           <form
             className="activity-card__edit-form"
             onSubmit={e => { e.preventDefault(); void handleSave() }}
+            onKeyDown={e => {
+              if (e.key === 'Escape') {
+                handleCancel()
+              }
+            }}
             aria-label="Edit activity"
           >
             <div className="edit-form__row">
@@ -182,6 +201,7 @@ export function ActivityCard({ item, onUpdate, onRemove, isLoading = false }: Ac
                 className="edit-form__input"
                 value={editStartTime}
                 onChange={e => setEditStartTime(e.target.value)}
+                disabled={saving || isLoading}
                 required
               />
             </div>
@@ -195,6 +215,7 @@ export function ActivityCard({ item, onUpdate, onRemove, isLoading = false }: Ac
                 onChange={e => setEditDuration(e.target.value)}
                 min="1"
                 max="1440"
+                disabled={saving || isLoading}
                 required
               />
             </div>
@@ -207,6 +228,7 @@ export function ActivityCard({ item, onUpdate, onRemove, isLoading = false }: Ac
                 onChange={e => setEditTip(e.target.value)}
                 maxLength={500}
                 rows={2}
+                disabled={saving || isLoading}
                 placeholder="Add a travel note…"
               />
             </div>
@@ -216,7 +238,7 @@ export function ActivityCard({ item, onUpdate, onRemove, isLoading = false }: Ac
                 type="submit"
                 id={`save-activity-${item.id}`}
                 className="edit-form__btn edit-form__btn--save"
-                disabled={saving}
+                disabled={saving || isLoading}
               >
                 {saving ? 'Saving…' : 'Save'}
               </button>
@@ -225,7 +247,7 @@ export function ActivityCard({ item, onUpdate, onRemove, isLoading = false }: Ac
                 id={`cancel-edit-${item.id}`}
                 className="edit-form__btn edit-form__btn--cancel"
                 onClick={handleCancel}
-                disabled={saving}
+                disabled={saving || isLoading}
               >
                 Cancel
               </button>

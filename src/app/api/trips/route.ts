@@ -28,7 +28,7 @@ export async function GET() {
     .order('updated_at', { ascending: false })
 
   if (dbError) {
-    return Response.json({ error: dbError.message, code: 'DB_ERROR' }, { status: 500 })
+    return Response.json({ error: 'Failed to retrieve trips. Please try again later.', code: 'DB_ERROR' }, { status: 500 })
   }
 
   return Response.json({ trips })
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     .single()
 
   if (dbError) {
-    return Response.json({ error: dbError.message, code: 'DB_ERROR' }, { status: 500 })
+    return Response.json({ error: 'Failed to create trip. Please try again.', code: 'DB_ERROR' }, { status: 500 })
   }
 
   return Response.json({ trip }, { status: 201 })
