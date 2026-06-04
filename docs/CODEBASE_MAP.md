@@ -1,8 +1,8 @@
 # CODEBASE MAP
 ## TripGenius AI
 
-> **Last Updated:** 2026-06-04 (Phase 1 Complete)  
-> **Status:** Foundation built. Phase 2 (Core AI Pipeline) is next.
+> **Last Updated:** 2026-06-04 (Phase 2 Complete + AI Provider Abstraction Layer)
+> **Status:** AI pipeline built and tested. Provider abstraction added (AI_PROVIDER env var). Phase 3 API routes partially complete.
 >
 > **⚠️ AI AGENT INSTRUCTION:** Read this file **before writing any code**. Search for existing implementations here before creating any new file. Extend existing modules; only create new files when no existing module can accommodate the change.
 
@@ -67,10 +67,23 @@ mini-hackathon-individual/
 │   │
 │   ├── lib/
 │   │   ├── supabase/           # Supabase client instantiation (ONLY here)
-│   │   ├── types/              # All shared TypeScript types [TO BE BUILT]
-│   │   ├── ai/                 # LLM helpers: prompts, parser, synthesizer [TO BE BUILT]
-│   │   ├── services/           # External API clients: Places, Amadeus [TO BE BUILT]
-│   │   └── solver/             # Scheduling algorithm [TO BE BUILT]
+│   │   ├── types/              # All shared TypeScript types ✅ BUILT
+│   │   │   ├── trip.ts         # BudgetTier, TravelPace, TravelIntent, ScheduledItem, etc.
+│   │   │   └── place.ts        # CandidatePlace, PlaceRecord, OpeningHours, etc.
+│   │   ├── ai/                 # LLM helpers ✅ BUILT
+│   │   │   ├── provider.ts     # ⭐ AI provider abstraction (ONLY file that imports @ai-sdk/*)
+│   │   │   ├── prompts.ts      # All prompt strings (single source of truth)
+│   │   │   ├── parser.ts       # Stage 1: intent parser (uses provider.ts)
+│   │   │   └── synthesizer.ts  # Stage 4: narrative annotator (uses provider.ts)
+│   │   ├── services/           # External API clients ✅ BUILT
+│   │   │   ├── google-places.ts  # Google Places + 14-day Supabase cache
+│   │   │   ├── amadeus.ts        # Hotel search + OAuth2 token cache
+│   │   │   ├── embeddings.ts     # Text embeddings (uses provider.ts)
+│   │   │   └── recommendations.ts # Attraction ranking orchestrator
+│   │   └── solver/             # Scheduling algorithm ✅ BUILT
+│   │       ├── haversine.ts    # Distance + travel time (pure TS)
+│   │       ├── scorer.ts       # Hotel + place scoring (4 factors)
+│   │       └── tsptw.ts        # Greedy TSPTW scheduler (pure TS)
 │   │
 │   └── middleware.ts           # Route protection & session refresh
 │
@@ -293,19 +306,22 @@ CREATE INDEX ON public.trips (user_id, status);
 ## 6. API Map
 
 ### Currently Implemented
-None yet. API routes are built in Phase 3.
 
-### Planned API Routes (Phase 3)
-
-| Method | Route | Purpose | Auth Required |
+| Method | Route | Purpose | Auth |
 |---|---|---|---|
+| `POST` | `/api/auth/signout` | Sign out + clear session | ✅ |
 | `POST` | `/api/ai/generate-itinerary` | Full 4-stage AI pipeline | ✅ |
 | `POST` | `/api/ai/chat` | Streaming conversational AI | ✅ |
+| `GET/POST` | `/api/trips` | List / create trips | ✅ |
+
+### Remaining API Routes (Phase 3)
+
+| Method | Route | Purpose | Auth |
+|---|---|---|---|
+| `GET/PATCH/DELETE` | `/api/trips/[id]` | Get, update, delete a trip | ✅ |
+| `PATCH` | `/api/trips/[id]/items` | Bulk reorder itinerary items | ✅ |
 | `GET` | `/api/places/search` | Google Places search with cache | ✅ |
 | `GET` | `/api/hotels/search` | Amadeus hotel search | ✅ |
-| `GET/POST` | `/api/trips` | List all trips / create new trip | ✅ |
-| `GET/PATCH/DELETE` | `/api/trips/[id]` | Get, update, or delete a trip | ✅ |
-| `PATCH` | `/api/trips/[id]/items` | Bulk reorder itinerary items | ✅ |
 
 > [!IMPORTANT]
 > **All API routes MUST follow the auth-first pattern:**
@@ -335,6 +351,7 @@ All API errors return:
     "@supabase/ssr": "^0.10.3",
     "@hello-pangea/dnd": "^18.0.1",
     "ai": "^6.0.196",
+    "@ai-sdk/google": "latest",
     "zod": "^4.4.3",
     "lucide-react": "^1.17.0",
     "clsx": "^2.1.1",
@@ -342,6 +359,10 @@ All API errors return:
     "class-variance-authority": "^0.7.1",
     "@base-ui/react": "^1.5.0",
     "shadcn": "^4.10.0"
+  },
+  "devDependencies": {
+    "vitest": "latest",
+    "@vitest/coverage-v8": "latest"
   }
 }
 ```
@@ -371,6 +392,23 @@ import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 | `Sidebar` | Inside `src/app/(main)/layout.tsx` | Extract before reusing |
 | `MobileNav` | Inside `src/app/(main)/layout.tsx` | Extract before reusing |
 
+### DO NOT recreate these services/modules — they already exist:
+
+| Module | File | What it does |
+|---|---|---|
+| **AI Provider Abstraction** | `src/lib/ai/provider.ts` | ⭐ Single source of LLM model instances. Only file that imports `@ai-sdk/*`. |
+| Haversine distance | `src/lib/solver/haversine.ts` | Distance + travel time |
+| Place scorer | `src/lib/solver/scorer.ts` | scoreHotel, scorePlace, scoreOpeningHourFit, rankPlaces |
+| TSPTW solver | `src/lib/solver/tsptw.ts` | buildSchedule |
+| Intent parser | `src/lib/ai/parser.ts` | parseTravelIntent (uses provider.ts) |
+| Narrative synthesizer | `src/lib/ai/synthesizer.ts` | synthesizeNarrative (uses provider.ts) |
+| All prompts | `src/lib/ai/prompts.ts` | INTENT_PARSE_PROMPT, NARRATIVE_SYNTHESIS_PROMPT, CHAT_SYSTEM_PROMPT |
+| Google Places | `src/lib/services/google-places.ts` | searchPlacesNearby (with 14-day cache) |
+| Amadeus hotels | `src/lib/services/amadeus.ts` | searchHotels |
+| Embeddings | `src/lib/services/embeddings.ts` | embedText, embedInterests (uses provider.ts) |
+| Recommendations | `src/lib/services/recommendations.ts` | getRecommendedAttractions, getRecommendedRestaurants |
+| Shared types | `src/lib/types/trip.ts`, `place.ts` | All shared interfaces and union types |
+
 ### DO NOT create new auth forms
 - Login form: `src/app/(auth)/login/page.tsx` already exists
 - Signup form: `src/app/(auth)/signup/page.tsx` already exists
@@ -396,19 +434,15 @@ STEP 5 — Follow patterns in agent_docs/code_patterns.md
 STEP 6 — Verify TypeScript + ESLint pass before marking a task done
 ```
 
-### What Needs to Be Built Next (Phase 2)
-
-The following modules **do not yet exist** and will need to be created:
+### What Needs to Be Built Next (Phase 4 — UI)
 
 | Priority | Module | Path | Notes |
 |---|---|---|---|
-| 1 | Shared TypeScript types | `src/lib/types/trip.ts`, `place.ts` | Define before any AI work |
-| 2 | AI prompt registry | `src/lib/ai/prompts.ts` | Centralize all LLM strings |
-| 3 | Intent parser | `src/lib/ai/parser.ts` | Gemini 2.5 Pro + Zod schema |
-| 4 | Google Places service | `src/lib/services/google-places.ts` | With 14-day cache TTL |
-| 5 | Amadeus service | `src/lib/services/amadeus.ts` | Hotel search client |
-| 6 | Haversine utility | `src/lib/solver/haversine.ts` | Distance calculation |
-| 7 | Hotel scorer | `src/lib/solver/scorer.ts` | Ranking algorithm |
-| 8 | TSPTW solver | `src/lib/solver/tsptw.ts` | Greedy scheduling |
-| 9 | Narrative synthesizer | `src/lib/ai/synthesizer.ts` | Gemini 2.5 Flash |
-| 10 | Itinerary API route | `src/app/api/ai/generate-itinerary/route.ts` | Full 4-stage pipeline |
+| 1 | Plan page | `app/(main)/plan/[tripId]/page.tsx` | Split-pane layout |
+| 2 | ChatPanel | `components/chat/ChatPanel.tsx` | useChat hook |
+| 3 | ItineraryPanel | `components/itinerary/ItineraryPanel.tsx` | Drag-and-drop |
+| 4 | ActivityCard | `components/itinerary/ActivityCard.tsx` | Per-item card |
+| 5 | HotelCard | `components/hotels/HotelCard.tsx` | Hotel recommendation card |
+| 6 | TripMap | `components/map/TripMap.tsx` | Google Maps, SSR:false |
+| 7 | PlaceMarker | `components/map/PlaceMarker.tsx` | Map pin |
+| 8 | RoutePolyline | `components/map/RoutePolyline.tsx` | Day route line |

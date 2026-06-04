@@ -267,6 +267,33 @@ export async function GET(request: Request) {
 - **Solver output is deterministic.** Given the same input, the solver must return the same schedule. No randomness unless for tie-breaking.
 - **Time window conflicts are surfaced, not silently dropped.** If no valid schedule can be produced, return an error object with the conflicting item IDs.
 
+### 5.8 AI Provider Abstraction Rules
+
+- **Single Provider Abstraction Layer:** All LLM access must go through a single provider abstraction layer.
+- **No Direct Calls:** Feature code must never call specific providers directly:
+  - Gemini
+  - Qwen
+  - OpenAI
+  - Local LLM
+- **Environment Configuration:** Provider/model selection must be controlled by environment configuration. Example:
+  ```env
+  AI_PROVIDER=
+  # Provider specific configs:
+  QWEN_MODEL=
+  GEMINI_MODEL=
+  LOCAL_LLM_MODEL=
+  ```
+- **Separation of Concerns:** Changing AI provider or model should not require changes to:
+  - API routes
+  - planner logic
+  - recommendation engine
+  - UI components
+- **Provider-Independent Prompts:** Keep prompts provider independent.
+- **Consistent Validation:** Structured AI responses must continue using:
+  - schema validation
+  - existing validation patterns
+- **Extensibility:** New providers must extend the existing provider abstraction. Never create parallel AI architectures.
+
 ---
 
 ## 5. Build Roadmap & Phases
@@ -385,6 +412,28 @@ NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 GOOGLE_GENERATIVE_AI_API_KEY=
+
+# AI Provider Abstraction (Section 5.8)
+# Set AI_PROVIDER to switch LLM backend without code changes.
+AI_PROVIDER=gemini                           # 'gemini' (default) | 'openai' | 'qwen'
+
+# Gemini model overrides (used when AI_PROVIDER=gemini)
+GEMINI_PRO_MODEL=gemini-2.5-pro-preview-05-06
+GEMINI_FLASH_MODEL=gemini-2.5-flash-preview-05-20
+GEMINI_EMBEDDING_MODEL=text-embedding-004
+
+# OpenAI model overrides (used when AI_PROVIDER=openai)
+# OPENAI_API_KEY=
+# OPENAI_PRO_MODEL=gpt-4o
+# OPENAI_FLASH_MODEL=gpt-4o-mini
+# OPENAI_EMBEDDING_MODEL=text-embedding-3-small
+
+# Qwen model overrides (used when AI_PROVIDER=qwen)
+# QWEN_API_KEY=
+# QWEN_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+# QWEN_MODEL=qwen-max
+# QWEN_FLASH_MODEL=qwen-turbo
+# QWEN_EMBEDDING_MODEL=text-embedding-v3
 
 # Required for data features
 NEXT_PUBLIC_GOOGLE_MAPS_KEY=

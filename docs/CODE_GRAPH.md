@@ -1,7 +1,7 @@
 # CODE GRAPH
 ## TripGenius AI — Module Dependencies & Data Flows
 
-> **Last Updated:** 2026-06-04 (Phase 1 Complete)
+> **Last Updated:** 2026-06-04 (Phase 2 Complete — Core AI Pipeline + Recommendation Engine)
 > **Purpose:** This document maps every dependency edge in the codebase so future AI agents know exactly where to insert new code, which files to modify, and what data flows through the system.
 >
 > **⚠️ AI AGENT INSTRUCTION:** Read `docs/CODEBASE_MAP.md` first, then this file. Use this graph to locate the correct insertion point for any new feature.
@@ -54,7 +54,7 @@ src/app/(main)/dashboard/page.tsx  [Server Component]
   └─── @/components/ui/button (Button)
 ```
 
-### Planned Dependency Tree (Phase 2–4 additions)
+### Planned Dependency Tree (Phase 4 UI additions)
 
 ```
 src/app/api/ai/generate-itinerary/route.ts  [API Route - Phase 3]
@@ -109,6 +109,52 @@ src/components/map/TripMap.tsx  ['use client', ssr:false - Phase 4]
   └─── @/lib/types/place (CandidatePlace)
 ```
 
+### Built Dependency Tree (Phase 2 + Provider Abstraction ✅)
+
+```
+# ⭐ Provider abstraction hub — ONLY file that imports @ai-sdk/*
+src/lib/ai/provider.ts
+  └── @ai-sdk/google   (when AI_PROVIDER=gemini, default)
+  └── @ai-sdk/openai   (when AI_PROVIDER=openai)
+  └── @ai-sdk/openai   (when AI_PROVIDER=qwen, via createOpenAI)
+  Exports: getParserModel(), getSynthesisModel(), getChatModel(), getEmbeddingModel()
+
+# API routes — ZERO direct provider imports
+src/app/api/ai/generate-itinerary/route.ts
+  └── @/lib/supabase/server
+  └── @/lib/ai/parser (parseTravelIntent)
+  │       └── ai (generateObject)
+  │       └── @/lib/ai/provider (getParserModel)   ← abstraction
+  └── @/lib/ai/synthesizer (synthesizeNarrative)
+  │       └── ai (generateObject)
+  │       └── @/lib/ai/provider (getSynthesisModel) ← abstraction
+  └── @/lib/services/recommendations (getRecommendedAttractions, getRecommendedRestaurants)
+  │       └── @/lib/services/google-places (searchPlacesNearby)
+  │       └── @/lib/solver/scorer (rankPlaces, scoreOpeningHourFit)
+  └── @/lib/services/amadeus (searchHotels)
+  └── @/lib/solver/tsptw (buildSchedule)
+  │       └── @/lib/solver/haversine
+  └── @/lib/solver/scorer (scoreHotel)
+  └── @/lib/types/trip, @/lib/types/place
+
+src/app/api/ai/chat/route.ts
+  └── @/lib/supabase/server
+  └── ai (streamText)
+  └── @/lib/ai/provider (getChatModel)            ← abstraction
+  └── @/lib/ai/prompts (CHAT_SYSTEM_PROMPT)
+
+src/lib/services/embeddings.ts
+  └── ai (embed)
+  └── @/lib/ai/provider (getEmbeddingModel)       ← abstraction
+
+src/app/api/trips/route.ts
+  └── @/lib/supabase/server
+  └── zod (validation)
+
+src/app/api/auth/signout/route.ts
+  └── @/lib/supabase/server
+```
+
 ---
 
 ## 2. Data Flows
@@ -143,57 +189,29 @@ USER opens /dashboard
 USER sees "My Trips" grid
 ```
 
-### 2B. Itinerary Generation Flow (Phase 2/3 — TO BE BUILT)
+### 2B. Itinerary Generation Flow (✅ Built)
 
 ```
-USER submits travel prompt in ChatPanel
-  e.g., "Plan 3 days in Tokyo, mid-range budget, I love food and temples"
-    │
-    ▼
-[POST /api/ai/generate-itinerary]
-    │
-    ├── STAGE 1: Intent Parsing  (lib/ai/parser.ts)
-    │     Input:  user's raw message (string)
-    │     Model:  Gemini 2.5 Pro
-    │     Output: TravelIntent { destination, dates, budget, interests, pace }
-    │     Guard:  Zod schema validation; retry once on failure
-    │
-    ├── STAGE 2: Candidate Retrieval  (lib/services/)
-    │     A. Check places cache in Supabase (TTL = 14 days)
-    │        SELECT * FROM places WHERE city = $city AND last_fetched > $ttl
-    │     B. If stale/missing → call Google Places API
-    │        GET https://places.googleapis.com/v1/places:searchNearby
-    │     C. Embed user interests → lib/services/embeddings.ts
-    │        → vector similarity search: rpc('match_places', { embedding, threshold })
-    │     D. Search hotels: lib/services/amadeus.ts
-    │        GET https://test.api.amadeus.com/v2/shopping/hotel-offers
-    │     Output: CandidatePlace[] (all validated, no hallucinations)
-    │
-    ├── STAGE 3: Schedule Optimization  (lib/solver/)
-    │     A. Score hotels: lib/solver/scorer.ts → scoreHotel()
-    │     B. Score attractions: lib/solver/scorer.ts → scorePlace()
-    │     C. Build schedule: lib/solver/tsptw.ts → buildSchedule()
-    │        Pure TypeScript. No external calls. Deterministic.
-    │        Respects: opening hours, travel times (haversine), user pace
-    │     Output: LockedSchedule[] (immutable — LLM cannot modify)
-    │
-    ├── STAGE 4: Narrative Synthesis  (lib/ai/synthesizer.ts)
-    │     Input:  LockedSchedule (places are locked — LLM only annotates)
-    │     Model:  Gemini 2.5 Flash
-    │     Output: Annotated schedule with ai_tip per activity
-    │     Guard:  Zod validation; LLM cannot add/remove/rename places
-    │
-    └── PERSIST to Supabase
-          INSERT INTO trips (...)
-          INSERT INTO itinerary_days (...)
-          INSERT INTO itinerary_items (...)
-          INSERT INTO trip_hotels (...)
-    │
-    ▼
-Response: { tripId, days[], hotels[] }
-    │
-    ▼
-CLIENT redirects to /plan/[tripId]
+POST /api/ai/generate-itinerary  { message: string }
+  │
+  ├─ STAGE 1: parseTravelIntent()     ← Gemini 2.5 Pro + Zod
+  │     Output: TravelIntent
+  │
+  ├─ STAGE 2: getRecommendedAttractions() + searchHotels()
+  │     Attractions: Google Places (cache) → rankPlaces() scorer
+  │     Restaurants: Google Places (cache) → rankPlaces() scorer
+  │     Hotels:      Amadeus API           → scoreHotel() sort
+  │
+  ├─ STAGE 3: buildSchedule()          ← Greedy TSPTW (pure TS)
+  │     Input:  CandidatePlace[] (validated, no hallucinations)
+  │     Output: ScheduledItem[] (immutable — LLM cannot touch)
+  │
+  ├─ STAGE 4: synthesizeNarrative()    ← Gemini 2.5 Flash + Zod
+  │     Annotates ai_tip only — cannot add/remove/rename places
+  │
+  └─ PERSIST: trips → itinerary_days → itinerary_items + trip_hotels
+  │
+  Response: { tripId, title, destination, hotels[], days[] }
 ```
 
 ### 2C. Streaming Chat Flow (Phase 3 — TO BE BUILT)
@@ -626,27 +644,29 @@ NEVER:
 
 Quick-reference table for any agent adding a new feature:
 
-| Feature | New File | Called From | Phase |
+| Feature | New File | Called From | Status |
 |---|---|---|---|
-| Auth signout | `app/api/auth/signout/route.ts` | Sidebar form | ⚠️ Missing |
-| Shared types | `lib/types/trip.ts`, `lib/types/place.ts` | All Phase 2 files | 2 |
-| All prompts | `lib/ai/prompts.ts` | `parser.ts`, `synthesizer.ts`, `chat/route.ts` | 2 |
-| Intent parser | `lib/ai/parser.ts` | `api/ai/generate-itinerary/route.ts` | 2 |
-| Places cache | `lib/services/google-places.ts` | `api/places/search/route.ts`, itinerary route | 2 |
-| Hotel search | `lib/services/amadeus.ts` | `api/hotels/search/route.ts`, itinerary route | 2 |
-| Embeddings | `lib/services/embeddings.ts` | `api/ai/generate-itinerary/route.ts` | 2 |
-| Haversine | `lib/solver/haversine.ts` | `lib/solver/tsptw.ts` | 2 |
-| Scorer | `lib/solver/scorer.ts` | `api/ai/generate-itinerary/route.ts` | 2 |
-| Solver | `lib/solver/tsptw.ts` | `api/ai/generate-itinerary/route.ts` | 2 |
-| Synthesizer | `lib/ai/synthesizer.ts` | `api/ai/generate-itinerary/route.ts` | 2 |
-| Itinerary API | `app/api/ai/generate-itinerary/route.ts` | Frontend ChatPanel | 3 |
-| Chat API | `app/api/ai/chat/route.ts` | `components/chat/ChatPanel.tsx` | 3 |
-| Places API | `app/api/places/search/route.ts` | Future search UI | 3 |
-| Hotels API | `app/api/hotels/search/route.ts` | Future search UI | 3 |
-| Trips CRUD | `app/api/trips/route.ts` + `[id]/route.ts` | Dashboard + Plan | 3 |
-| ChatPanel | `components/chat/ChatPanel.tsx` | `plan/[tripId]/page.tsx` | 4 |
-| TripMap | `components/map/TripMap.tsx` | `plan/[tripId]/page.tsx` (dynamic) | 4 |
-| ItineraryPanel | `components/itinerary/ItineraryPanel.tsx` | `plan/[tripId]/page.tsx` | 4 |
-| ActivityCard | `components/itinerary/ActivityCard.tsx` | `ItineraryPanel.tsx` | 4 |
-| HotelCard | `components/hotels/HotelCard.tsx` | `plan/[tripId]/page.tsx` | 4 |
-| Plan page | `app/(main)/plan/[tripId]/page.tsx` | Dashboard link | 4 |
+| Auth signout | `app/api/auth/signout/route.ts` | Sidebar form | ✅ Built |
+| Shared types | `lib/types/trip.ts`, `lib/types/place.ts` | All Phase 2 files | ✅ Built |
+| All prompts | `lib/ai/prompts.ts` | parser, synthesizer, chat | ✅ Built |
+| Intent parser | `lib/ai/parser.ts` | generate-itinerary route | ✅ Built |
+| Places cache | `lib/services/google-places.ts` | recommendations | ✅ Built |
+| Hotel search | `lib/services/amadeus.ts` | generate-itinerary route | ✅ Built |
+| Embeddings | `lib/services/embeddings.ts` | generate-itinerary route | ✅ Built |
+| Haversine | `lib/solver/haversine.ts` | tsptw, scorer | ✅ Built |
+| Scorer | `lib/solver/scorer.ts` | recommendations, route | ✅ Built |
+| Recommendations | `lib/services/recommendations.ts` | generate-itinerary route | ✅ Built |
+| Solver | `lib/solver/tsptw.ts` | generate-itinerary route | ✅ Built |
+| Synthesizer | `lib/ai/synthesizer.ts` | generate-itinerary route | ✅ Built |
+| Itinerary API | `app/api/ai/generate-itinerary/route.ts` | Frontend ChatPanel | ✅ Built |
+| Chat API | `app/api/ai/chat/route.ts` | ChatPanel.tsx | ✅ Built |
+| Trips CRUD | `app/api/trips/route.ts` | Dashboard + Plan | ✅ Built |
+| Places API | `app/api/places/search/route.ts` | Future search UI | Phase 3 |
+| Hotels API | `app/api/hotels/search/route.ts` | Future search UI | Phase 3 |
+| Trips detail | `app/api/trips/[id]/route.ts` | Dashboard + Plan | Phase 3 |
+| ChatPanel | `components/chat/ChatPanel.tsx` | plan/[tripId]/page.tsx | Phase 4 |
+| TripMap | `components/map/TripMap.tsx` | plan/[tripId]/page.tsx | Phase 4 |
+| ItineraryPanel | `components/itinerary/ItineraryPanel.tsx` | plan/[tripId]/page.tsx | Phase 4 |
+| ActivityCard | `components/itinerary/ActivityCard.tsx` | ItineraryPanel | Phase 4 |
+| HotelCard | `components/hotels/HotelCard.tsx` | plan/[tripId]/page.tsx | Phase 4 |
+| Plan page | `app/(main)/plan/[tripId]/page.tsx` | Dashboard link | Phase 4 |
