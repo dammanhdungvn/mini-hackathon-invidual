@@ -54,10 +54,10 @@ export function getParserModel(): LanguageModel {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { createOpenAI } = require('@ai-sdk/openai')
     const qwen = createOpenAI({
-      apiKey:  process.env.QWEN_API_KEY ?? '',
+      apiKey: process.env.QWEN_API_KEY ?? '',
       baseURL: process.env.QWEN_BASE_URL ?? 'https://dashscope.aliyuncs.com/compatible-mode/v1',
     })
-    return qwen(process.env.QWEN_MODEL ?? 'qwen-max')
+    return qwen(process.env.QWEN_MODEL ?? 'qwen3.5-flash')
   }
   throw new Error(`[ai/provider] Unhandled provider: ${provider}`)
 }
@@ -82,7 +82,7 @@ export function getSynthesisModel(): LanguageModel {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { createOpenAI } = require('@ai-sdk/openai')
     const qwen = createOpenAI({
-      apiKey:  process.env.QWEN_API_KEY ?? '',
+      apiKey: process.env.QWEN_API_KEY ?? '',
       baseURL: process.env.QWEN_BASE_URL ?? 'https://dashscope.aliyuncs.com/compatible-mode/v1',
     })
     return qwen(process.env.QWEN_FLASH_MODEL ?? 'qwen-turbo')
@@ -122,7 +122,7 @@ export function getEmbeddingModel(): EmbeddingModel {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { createOpenAI } = require('@ai-sdk/openai')
     const qwen = createOpenAI({
-      apiKey:  process.env.QWEN_API_KEY ?? '',
+      apiKey: process.env.QWEN_API_KEY ?? '',
       baseURL: process.env.QWEN_BASE_URL ?? 'https://dashscope.aliyuncs.com/compatible-mode/v1',
     })
     return qwen.embedding(process.env.QWEN_EMBEDDING_MODEL ?? 'text-embedding-v3')

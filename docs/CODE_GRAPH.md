@@ -153,6 +153,28 @@ src/app/api/trips/route.ts
 
 src/app/api/auth/signout/route.ts
   └── @/lib/supabase/server
+
+# ⭐ Hotel Recommendation Engine
+src/lib/services/hotel-recommendations.ts
+  └── @/lib/services/amadeus (searchHotels)       ← reuses existing, no duplicate
+  └── @/lib/solver/scorer (rankHotels → scoreHotelDetailed)
+  │       └── @/lib/solver/haversine (centroid distance)
+  └── @/lib/ai/provider (getSynthesisModel)       ← abstraction
+  └── ai (generateObject)
+  └── @/lib/ai/prompts (HOTEL_EXPLANATION_PROMPT)
+  └── @/lib/types/trip (TripHotel, RankedHotel, BudgetTier)
+
+src/app/api/hotels/search/route.ts
+  └── @/lib/supabase/server (auth)
+  └── @/lib/services/hotel-recommendations (getRecommendedHotels)
+  └── zod (validation)
+
+src/app/api/trips/[id]/hotels/route.ts
+  └── @/lib/supabase/server (auth + ownership check)
+  └── zod (validation)
+
+src/components/hotels/HotelCard.tsx
+  └── @/lib/types/trip (RankedHotel)  [display only — no data fetching]
 ```
 
 ---

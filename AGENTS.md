@@ -431,7 +431,7 @@ GEMINI_EMBEDDING_MODEL=text-embedding-004
 # Qwen model overrides (used when AI_PROVIDER=qwen)
 # QWEN_API_KEY=
 # QWEN_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
-# QWEN_MODEL=qwen-max
+# QWEN_MODEL=qwen3.5-flash
 # QWEN_FLASH_MODEL=qwen-turbo
 # QWEN_EMBEDDING_MODEL=text-embedding-v3
 

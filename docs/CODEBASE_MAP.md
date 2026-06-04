@@ -1,8 +1,8 @@
 # CODEBASE MAP
 ## TripGenius AI
 
-> **Last Updated:** 2026-06-04 (Phase 2 Complete + AI Provider Abstraction Layer)
-> **Status:** AI pipeline built and tested. Provider abstraction added (AI_PROVIDER env var). Phase 3 API routes partially complete.
+> **Last Updated:** 2026-06-04 (Hotel Recommendation Engine complete)
+> **Status:** AI pipeline + Hotel Recommendation Engine built and tested. Provider abstraction in place. Phase 3 API routes partially complete.
 >
 > **⚠️ AI AGENT INSTRUCTION:** Read this file **before writing any code**. Search for existing implementations here before creating any new file. Extend existing modules; only create new files when no existing module can accommodate the change.
 
@@ -79,7 +79,8 @@ mini-hackathon-individual/
 │   │   │   ├── google-places.ts  # Google Places + 14-day Supabase cache
 │   │   │   ├── amadeus.ts        # Hotel search + OAuth2 token cache
 │   │   │   ├── embeddings.ts     # Text embeddings (uses provider.ts)
-│   │   │   └── recommendations.ts # Attraction ranking orchestrator
+│   │   │   ├── recommendations.ts # Attraction ranking orchestrator
+│   │   │   └── hotel-recommendations.ts # ⭐ Hotel ranking + AI explanation
 │   │   └── solver/             # Scheduling algorithm ✅ BUILT
 │   │       ├── haversine.ts    # Distance + travel time (pure TS)
 │   │       ├── scorer.ts       # Hotel + place scoring (4 factors)
@@ -398,16 +399,18 @@ import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 |---|---|---|
 | **AI Provider Abstraction** | `src/lib/ai/provider.ts` | ⭐ Single source of LLM model instances. Only file that imports `@ai-sdk/*`. |
 | Haversine distance | `src/lib/solver/haversine.ts` | Distance + travel time |
-| Place scorer | `src/lib/solver/scorer.ts` | scoreHotel, scorePlace, scoreOpeningHourFit, rankPlaces |
+| Place + Hotel scorer | `src/lib/solver/scorer.ts` | scoreHotel, scoreHotelDetailed, rankHotels, scorePlace, rankPlaces |
 | TSPTW solver | `src/lib/solver/tsptw.ts` | buildSchedule |
 | Intent parser | `src/lib/ai/parser.ts` | parseTravelIntent (uses provider.ts) |
 | Narrative synthesizer | `src/lib/ai/synthesizer.ts` | synthesizeNarrative (uses provider.ts) |
-| All prompts | `src/lib/ai/prompts.ts` | INTENT_PARSE_PROMPT, NARRATIVE_SYNTHESIS_PROMPT, CHAT_SYSTEM_PROMPT |
+| All prompts | `src/lib/ai/prompts.ts` | INTENT_PARSE_PROMPT, NARRATIVE_SYNTHESIS_PROMPT, CHAT_SYSTEM_PROMPT, HOTEL_EXPLANATION_PROMPT |
 | Google Places | `src/lib/services/google-places.ts` | searchPlacesNearby (with 14-day cache) |
-| Amadeus hotels | `src/lib/services/amadeus.ts` | searchHotels |
+| Amadeus hotels | `src/lib/services/amadeus.ts` | searchHotels — DO NOT duplicate hotel fetching |
 | Embeddings | `src/lib/services/embeddings.ts` | embedText, embedInterests (uses provider.ts) |
-| Recommendations | `src/lib/services/recommendations.ts` | getRecommendedAttractions, getRecommendedRestaurants |
-| Shared types | `src/lib/types/trip.ts`, `place.ts` | All shared interfaces and union types |
+| Attraction recommendations | `src/lib/services/recommendations.ts` | getRecommendedAttractions, getRecommendedRestaurants |
+| **Hotel recommendations** | `src/lib/services/hotel-recommendations.ts` | ⭐ getRecommendedHotels, calculateCentroid — DO NOT duplicate |
+| HotelCard UI | `src/components/hotels/HotelCard.tsx` | HotelCard, HotelCardSkeleton — reuse for all hotel displays |
+| Shared types | `src/lib/types/trip.ts`, `place.ts` | TripHotel, RankedHotel, HotelRecommendationOptions + all other shared types |
 
 ### DO NOT create new auth forms
 - Login form: `src/app/(auth)/login/page.tsx` already exists

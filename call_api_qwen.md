@@ -10,7 +10,7 @@ try {
         }
     );
     const completion = await openai.chat.completions.create({
-        model: "qwen-plus",  
+        model: "",  
         messages: [
             { role: "system", content: "You are a helpful assistant." },
             { role: "user", content: "Who are you?" }

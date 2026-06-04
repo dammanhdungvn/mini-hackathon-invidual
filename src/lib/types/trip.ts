@@ -70,12 +70,40 @@ export interface TripHotel {
   trip_id: string
   amadeus_hotel_id?: string
   name: string
+  address?: string
   latitude?: number
   longitude?: number
   rating?: number
   price_per_night?: number
   currency: string
   rank: number
+  /** AI-generated explanation of why this hotel was recommended (never invented data) */
+  ai_reason?: string
+  /** Composite score 0–1 from ranking algorithm */
+  score?: number
+  /** Whether the user selected this hotel */
+  is_selected?: boolean
+}
+
+/** Fully scored hotel returned by the recommendation engine */
+export interface RankedHotel extends TripHotel {
+  score: number
+  scoreBreakdown: {
+    location: number    // 0–1: distance to itinerary centroid
+    price:    number    // 0–1: budget tier match + value ratio
+    quality:  number    // 0–1: rating + popularity proxy
+    preference: number  // 0–1: travel style + interests match
+  }
+}
+
+/** Options for the hotel recommendation engine */
+export interface HotelRecommendationOptions {
+  topN?: number
+  /** Itinerary centroid (average lat/lng of all scheduled places) */
+  centroidLat?: number
+  centroidLng?: number
+  /** User interests for preference scoring */
+  interests?: string[]
 }
 
 // ─── AI Pipeline Types ───────────────────────────────────────────────────────
