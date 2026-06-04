@@ -30,6 +30,7 @@ TripGenius follows **Test-Driven Development (TDD)** for all business logic.
 | `src/lib/solver/hotel-scorer.test.ts` | `lib/solver/scorer.ts` (hotel functions) | Unit |
 | `src/lib/services/recommendations.test.ts` | `lib/services/recommendations.ts` | Integration (mocked) |
 | `src/lib/services/hotel-recommendations.test.ts` | `lib/services/hotel-recommendations.ts` | Integration (mocked) |
+| `src/lib/itinerary/operations.test.ts` | `lib/itinerary/operations.ts` | Unit (59 tests) |
 
 ---
 

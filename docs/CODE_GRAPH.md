@@ -175,6 +175,57 @@ src/app/api/trips/[id]/hotels/route.ts
 
 src/components/hotels/HotelCard.tsx
   └── @/lib/types/trip (RankedHotel)  [display only — no data fetching]
+
+# ⭐ Itinerary Editor
+src/lib/itinerary/operations.ts
+  [pure TypeScript — no imports from any external module]
+  Exports: hhmmToMins, minsToHHMM, calcEndTime, isValidTime, isTimeRangeValid,
+           removeItemAndResequence, reorderItems, applyTimeEdit, validateItemUpdate
+
+src/app/api/trips/[id]/route.ts              [NEW — Phase 3 complete]
+  └── @/lib/supabase/server (auth + ownership)
+  └── zod (validation)
+  Handlers: GET (full trip + days + items + hotels), PATCH (metadata), DELETE
+
+src/app/api/trips/[id]/items/route.ts        [NEW — Phase 3 complete]
+  └── @/lib/supabase/server (auth + ownership)
+  └── zod (validation)
+  Handlers: PATCH (bulk reorder for drag-and-drop)
+
+src/app/api/trips/[id]/items/[itemId]/route.ts  [NEW]
+  └── @/lib/supabase/server (auth + ownership)
+  └── @/lib/itinerary/operations (validateItemUpdate, applyTimeEdit, removeItemAndResequence)
+  └── zod (validation)
+  Handlers: PATCH (edit single item), DELETE (remove + resequence siblings)
+
+src/app/api/ai/regenerate-day/route.ts       [NEW]
+  └── @/lib/supabase/server (auth + ownership)
+  └── @/lib/services/recommendations (getRecommendedAttractions, getRecommendedRestaurants)  ← reused
+  └── @/lib/solver/tsptw (buildSchedule)           ← reused
+  └── @/lib/ai/synthesizer (synthesizeNarrative)   ← reused
+  └── @/lib/types/trip (TravelIntent, BudgetTier, TravelPace)
+  └── zod (validation)
+
+src/components/itinerary/ActivityCard.tsx    [NEW]
+  └── @/lib/types/trip (ItineraryItem)       [display + local state only]
+  Callbacks: onUpdate, onRemove (delegated to ItineraryPanel → /api/)
+
+src/components/itinerary/DayColumn.tsx       [NEW]
+  └── ActivityCard                           [composes]
+  └── @/lib/types/trip (ItineraryDay, TripHotel)
+  Callbacks: onUpdateItem, onRemoveItem, onRegenerateDay (delegated to ItineraryPanel)
+
+src/components/itinerary/ItineraryPanel.tsx  [NEW]
+  └── DayColumn                              [composes]
+  └── @/lib/types/trip (ItineraryDay, TripHotel, ItineraryItem)
+  → fetch('/api/trips/[id]')                 — load data
+  → fetch('/api/trips/[id]/items/[itemId]', PATCH)  — edit item
+  → fetch('/api/trips/[id]/items/[itemId]', DELETE) — remove item
+  → fetch('/api/ai/regenerate-day', POST)    — regen day
+
+src/app/(main)/plan/[tripId]/page.tsx        [NEW]
+  └── @/lib/supabase/server (server-side auth + ownership check)
+  └── ItineraryPanel (client component, lazy loaded)
 ```
 
 ---

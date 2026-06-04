@@ -1,8 +1,8 @@
 # CODEBASE MAP
 ## TripGenius AI
 
-> **Last Updated:** 2026-06-04 (Hotel Recommendation Engine complete)
-> **Status:** AI pipeline + Hotel Recommendation Engine built and tested. Provider abstraction in place. Phase 3 API routes partially complete.
+> **Last Updated:** 2026-06-04 (Itinerary Editor complete)
+> **Status:** AI pipeline + Hotel Engine + Itinerary Editor built and tested. All Phase 3 API routes complete. Phase 4 plan page scaffolded.
 >
 > **⚠️ AI AGENT INSTRUCTION:** Read this file **before writing any code**. Search for existing implementations here before creating any new file. Extend existing modules; only create new files when no existing module can accommodate the change.
 
@@ -62,8 +62,12 @@ mini-hackathon-individual/
 │   │   ├── layout/             # Shared layout shells [TO BE EXTRACTED]
 │   │   ├── chat/               # Chat panel components [TO BE BUILT]
 │   │   ├── map/                # Google Maps components [TO BE BUILT]
-│   │   ├── itinerary/          # Itinerary panel & cards [TO BE BUILT]
-│   │   └── hotels/             # Hotel card components [TO BE BUILT]
+│   │   ├── itinerary/          # Itinerary components ✅ BUILT
+│   │   │   ├── ActivityCard.tsx  # Draggable/editable activity card
+│   │   │   ├── DayColumn.tsx     # Single day display with regen button
+│   │   │   └── ItineraryPanel.tsx # Top-level panel (fetches + orchestrates)
+│   │   └── hotels/             # Hotel card components ✅ BUILT
+│   │       └── HotelCard.tsx     # Hotel recommendation card
 │   │
 │   ├── lib/
 │   │   ├── supabase/           # Supabase client instantiation (ONLY here)
@@ -75,6 +79,8 @@ mini-hackathon-individual/
 │   │   │   ├── prompts.ts      # All prompt strings (single source of truth)
 │   │   │   ├── parser.ts       # Stage 1: intent parser (uses provider.ts)
 │   │   │   └── synthesizer.ts  # Stage 4: narrative annotator (uses provider.ts)
+│   │   ├── itinerary/          # ⭐ Itinerary editing pure functions ✅ BUILT
+│   │   │   └── operations.ts   # Time parse, reorder, validate (no side effects)
 │   │   ├── services/           # External API clients ✅ BUILT
 │   │   │   ├── google-places.ts  # Google Places + 14-day Supabase cache
 │   │   │   ├── amadeus.ts        # Hotel search + OAuth2 token cache
@@ -410,6 +416,10 @@ import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 | Attraction recommendations | `src/lib/services/recommendations.ts` | getRecommendedAttractions, getRecommendedRestaurants |
 | **Hotel recommendations** | `src/lib/services/hotel-recommendations.ts` | ⭐ getRecommendedHotels, calculateCentroid — DO NOT duplicate |
 | HotelCard UI | `src/components/hotels/HotelCard.tsx` | HotelCard, HotelCardSkeleton — reuse for all hotel displays |
+| **Itinerary operations** | `src/lib/itinerary/operations.ts` | ⭐ All pure itinerary edit functions — DO NOT duplicate time/sequence logic |
+| **ActivityCard** | `src/components/itinerary/ActivityCard.tsx` | Activity card with inline edit — DO NOT create another card for itinerary items |
+| **DayColumn** | `src/components/itinerary/DayColumn.tsx` | Single day display + regenerate — DO NOT recreate |
+| **ItineraryPanel** | `src/components/itinerary/ItineraryPanel.tsx` | Top-level panel orchestrator — DO NOT create parallel itinerary UI |
 | Shared types | `src/lib/types/trip.ts`, `place.ts` | TripHotel, RankedHotel, HotelRecommendationOptions + all other shared types |
 
 ### DO NOT create new auth forms
