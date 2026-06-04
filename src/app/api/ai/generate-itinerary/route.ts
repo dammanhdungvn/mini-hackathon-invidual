@@ -173,9 +173,19 @@ export async function POST(request: NextRequest) {
     })
   } catch (err) {
     console.error('[generate-itinerary]', err)
+    const isParsingError = err instanceof Error && (
+      err.name === 'ZodError' || 
+      err.message.includes('JSON') || 
+      err.message.includes('schema') || 
+      err.message.includes('generateObject') ||
+      err.message.includes('validation')
+    )
+    const messageText = isParsingError
+      ? 'I couldn\'t extract a valid destination, duration, or dates from your request. Please specify where you want to go, for how long (or dates), and what you want to do.'
+      : 'Failed to generate itinerary. Please try a different prompt or try again later.'
     return Response.json(
-      { error: 'Failed to generate itinerary. Please try a different prompt or try again later.', code: 'GENERATION_ERROR' },
-      { status: 500 }
+      { error: messageText, code: isParsingError ? 'PARSING_FAILED' : 'GENERATION_ERROR' },
+      { status: isParsingError ? 400 : 500 }
     )
   }
 }

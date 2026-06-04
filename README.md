@@ -1,36 +1,182 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TripGenius AI ✈️
 
-## Getting Started
+TripGenius AI is a production-ready, AI-powered travel planning web platform. It eliminates travel planning friction by automatically organizing highly optimized, constraint-aware itineraries and hotel recommendations in seconds. 
 
-First, run the development server:
+Unlike traditional static travel guides or hallucination-prone text chatbots, TripGenius AI uses a **hybrid approach**: combining natural language AI logic with mathematical constraint-solving algorithms to generate schedules that are geographically logical, temporally realistic, and highly personalized.
 
+---
+
+## 1. Product Overview
+
+Planning travel manually involves aggregating and cross-referencing information across multiple platforms (e.g., Google Maps for locations, TripAdvisor for ratings, Booking.com for prices, and individual venue websites for opening hours). Coordinating these factors with budget constraints and transportation schedules requires significant time and effort. 
+
+Existing AI solutions often output itineraries that include permanently closed venues, unrealistic transit times, and fabricated hotels, leading to user distrust. 
+
+**TripGenius AI** solves this by grounding all recommendations in real-world API data and feeding candidates into a deterministic, greedy **Traveling Salesperson Problem with Time Windows (TSPTW)** solver. The output is a realistic, timed schedule complete with geographical routing, real-time hotel matches, and contextual AI-narrated tips.
+
+---
+
+## 2. Features
+
+* 🔐 **User Accounts & Profiles:** Secure authentication (Email/Password) via Supabase Auth. Personalized profile configurations (budget levels, travel pace, and interests vectors).
+* 🤖 **Conversational AI Planner:** A conversational text input field complemented by structured dropdown selectors for destination search (with autocomplete), dates, budget tier, and travel pace.
+* 🗺️ **Interactive Split-Pane Workspace:** A dual-pane layout: a structured daily schedule on the left and an interactive map showing markers, polyline paths, and routes linking sequential points on the right.
+* ⚡ **Draggable Itinerary Editor:** Clean drag-and-drop or manual edits (swapping, deleting, and editing time/duration of activities). Manual edits automatically re-calculate travel times and alert the user if a venue's opening hours are violated.
+* 🏨 **Geospatially Centered Hotel Curation:** Recommends the top 3 hotels matching the user's budget tier, rating threshold (>4.0), and average distance to the generated itinerary's centroid.
+* 🔄 **Day-Level Regeneration:** A one-click "Regenerate Day" button that replaces a specific day's activities with the next-ranked candidates from the database, leaving the rest of the trip intact.
+
+---
+
+## 3. Tech Stack
+
+* **Frontend Framework:** Next.js 14 (App Router) + TypeScript
+* **Styling:** Tailwind CSS (Custom theme compatibility + glassmorphic UI components)
+* **Database & Auth:** Supabase PostgreSQL with the `pgvector` extension for semantic search, and Supabase Auth
+* **AI Orchestration:** Vercel AI SDK
+* **Unit Testing:** Vitest
+
+---
+
+## 4. AI Models & Providers
+
+TripGenius AI features a unified **AI Provider Abstraction Layer** (`src/lib/ai/provider.ts`). This allows switching the underlying model provider seamlessly via environment variables without touching any business logic or route handlers.
+
+Supported configurations include:
+
+| Provider | Parsing Model (Stage 1) | Narrative Model (Stage 4 & Chat) | Embedding Model |
+|---|---|---|---|
+| **Google Gemini (Default)** | `gemini-2.5-pro-preview-05-06` | `gemini-2.5-flash-preview-05-20` | `text-embedding-004` |
+| **OpenAI** | `gpt-4o` | `gpt-4o-mini` | `text-embedding-3-small` |
+| **Qwen (Alibaba)** | `qwen3.5-flash` | `qwen-turbo` | `text-embedding-v3` |
+
+---
+
+## 5. External APIs
+
+* **Google Places API (New):** Fetches detailed candidate attractions, opening hours, ratings, photos, and categories.
+* **Google Maps JavaScript SDK:** Powers the interactive map rendering, custom marker placements, and route polylines.
+* **Amadeus Self-Service API:** Fetches real-time hotel pricing, details, and availability by matching destination city codes.
+
+---
+
+## 6. Setup Instructions
+
+### Prerequisites
+Make sure you have [Node.js](https://nodejs.org/) installed and a Supabase project created (either locally or on Supabase Cloud).
+
+### Step 1: Clone the repository and install dependencies
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone <your-repository-url>
+cd tripgenius-ai
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Step 2: Set up the Database Schema
+If using Supabase Cloud, link your local CLI and push migrations:
+```bash
+# Link local CLI to remote Supabase project
+npx supabase link --project-ref your-supabase-project-ref
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+# Push the migration schema, indexes, and RLS policies
+npx supabase db push
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Alternatively, you can run the SQL files in `supabase/migrations/` sequentially inside the Supabase SQL Editor.
 
-## Learn More
+### Step 3: Populate environment variables
+Copy the environment template and fill in the values:
+```bash
+cp .env.example .env.local
+```
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 7. Environment Variables
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Configure your `.env.local` file using the following keys:
 
-## Deploy on Vercel
+```bash
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=            # Supabase API URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY=       # Supabase client-side API Key
+SUPABASE_SERVICE_ROLE_KEY=           # Supabase service role key (Secret)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+# AI Provider Configuration ('gemini' | 'openai' | 'qwen')
+AI_PROVIDER=gemini
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# Google Gemini (if AI_PROVIDER=gemini)
+GOOGLE_GENERATIVE_AI_API_KEY=        # Gemini API Key (Secret)
+GEMINI_PRO_MODEL=                    # Defaults to gemini-2.5-pro-preview-05-06
+GEMINI_FLASH_MODEL=                  # Defaults to gemini-2.5-flash-preview-05-20
+GEMINI_EMBEDDING_MODEL=              # Defaults to text-embedding-004
+
+# OpenAI (if AI_PROVIDER=openai)
+OPENAI_API_KEY=                      # OpenAI API Key (Secret)
+OPENAI_PRO_MODEL=                    # Defaults to gpt-4o
+OPENAI_FLASH_MODEL=                  # Defaults to gpt-4o-mini
+OPENAI_EMBEDDING_MODEL=              # Defaults to text-embedding-3-small
+
+# Qwen (if AI_PROVIDER=qwen)
+QWEN_API_KEY=                        # Qwen API Key (Secret)
+QWEN_BASE_URL=                       # Defaults to DashScope compatible endpoint
+QWEN_MODEL=                          # Defaults to qwen3.5-flash
+QWEN_FLASH_MODEL=                    # Defaults to qwen-turbo
+QWEN_EMBEDDING_MODEL=                # Defaults to text-embedding-v3
+
+# Google Maps & Places
+GOOGLE_PLACES_API_KEY=               # Server-side Places API Key (Secret)
+NEXT_PUBLIC_GOOGLE_MAPS_KEY=         # Client-side Map Render Key
+
+# Amadeus Self-Service API
+AMADEUS_CLIENT_ID=                   # Amadeus client ID (Secret)
+AMADEUS_CLIENT_SECRET=               # Amadeus client secret (Secret)
+
+# Application URL
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+---
+
+## 8. How to Run the Prototype
+
+To run the application locally:
+
+```bash
+# Run database schema migrations if running local Supabase
+npx supabase start
+npx supabase db push
+
+# Start Next.js development server
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your web browser.
+
+To run the test suite (Vitest):
+```bash
+npm run test
+```
+
+---
+
+## 9. Demo Flow
+
+A complete 5-minute walkthrough script is detailed in `docs/DEMO_SCRIPT.md`. Here is the main sequence:
+
+1. **Dashboard Overview:** Log in and see previously planned trips, showing full RLS coverage (User A cannot view User B's trips).
+2. **Trip Creation (Happy Path):** Navigate to `/plan/new`, click the **Tokyo Explorer** preset, and trigger the generator.
+3. **Stage Loader:** Watch the custom glassmorphic loader transition through the **4 stages of AI scheduling**:
+   - `Parser` (Intent extraction)
+   - `Retrieval` (Candidate matching & Amadeus Hotels fetching)
+   - `Solver` (Geospatial & opening-hour routing)
+   - `Synthesis` (Narrative tips generation)
+4. **Workspace Interaction:** Move activities via editing card details, delete items, and watch the sequence adjust dynamically. Check out the top 3 hotel recommendations matching the activity centroid.
+5. **Resilience Test (Error Path):** Attempt to generate a trip with a short prompt to trigger validation warnings, or pass an unclear prompt to observe structured clarifying messages without crashing.
+
+---
+
+## 10. Team Contribution
+
+This project was built during the individual MVP phase of the AI Travel Assistant Hackathon.
+
+* **Full-Stack Development & AI Integration:** Single-developer effort, responsible for the 4-stage AI pipeline, unified provider abstraction, database schema migration (including vector database triggers), TSPTW scheduling algorithms, and responsive frontend UI components.

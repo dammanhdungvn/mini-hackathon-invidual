@@ -197,7 +197,17 @@ These are **Shadcn/UI components** — do not modify their internals directly.
 | **Contains** | Logo link, Sign Out button |
 | **Reuse** | Do NOT recreate. Extract to `src/components/layout/MobileNav.tsx` when needed |
 
-### 4.3 Pages (Route Segments)
+### 4.3 Plan Creation Components
+
+#### `NewTripForm`
+| Field | Value |
+|---|---|
+| **Path** | `src/components/plan/NewTripForm.tsx` |
+| **Purpose** | Prompt entry, template selector, and dynamic generation progress indicator |
+| **Import** | `import { NewTripForm } from '@/components/plan/NewTripForm'` |
+| **Depends on** | `Button`, `lucide-react` icons |
+
+### 4.4 Pages (Route Segments)
 
 #### `src/app/layout.tsx` — Root Layout
 | Field | Value |
@@ -240,6 +250,15 @@ These are **Shadcn/UI components** — do not modify their internals directly.
 | **Empty state** | Renders a CTA card when no trips exist |
 | **Filled state** | Renders a responsive grid of trip cards linking to `/plan/[id]` |
 | **Depends on** | `createSupabaseServerClient`, `Button`, `lucide-react` icons |
+
+#### `src/app/(main)/plan/new/page.tsx`
+| Field | Value |
+|---|---|
+| **Type** | Server Component (async) |
+| **Purpose** | Plan a new adventure page |
+| **Auth guard** | Redirects to `/login` if unauthenticated |
+| **Structure** | Displays `NewTripForm` |
+| **Depends on** | `createSupabaseServerClient`, `NewTripForm` |
 
 ---
 
@@ -424,6 +443,7 @@ import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 | **DayColumn** | `src/components/itinerary/DayColumn.tsx` | Single day display + regenerate — DO NOT recreate |
 | **ItineraryPanel** | `src/components/itinerary/ItineraryPanel.tsx` | Top-level panel orchestrator — DO NOT create parallel itinerary UI |
 | Shared types | `src/lib/types/trip.ts`, `place.ts` | TripHotel, RankedHotel, HotelRecommendationOptions + all other shared types |
+| **NewTripForm** | `src/components/plan/NewTripForm.tsx` | Prompt entry, preset templates, and dynamic loader |
 
 ### DO NOT create new auth forms
 - Login form: `src/app/(auth)/login/page.tsx` already exists
