@@ -41,6 +41,7 @@ Always read these files before working on a feature:
 
 | File | When to Read |
 |---|---|
+| `docs/CODEBASE_MAP.md` | **FIRST — before any coding task** (duplicate prevention) |
 | `docs/TECH_DESIGN.md` | Before any architectural decision |
 | `docs/PRD-AITravelAssistant.md` | Before building any user-facing feature |
 | `lib/types/trip.ts` | Before working with any trip, day, or itinerary item data |
