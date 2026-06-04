@@ -232,7 +232,33 @@ src/app/(main)/plan/[tripId]/page.tsx        [NEW]
 
 ## 2. Data Flows
 
-### 2A. Dashboard Load Flow (Currently Implemented ✅)
+### 2A. Architecture Data Flow (Mock vs Production)
+
+**Current Prototype Flow (Mock Dataset):**
+```
+User
+  ↓
+AI Planner
+  ↓
+Recommendation Engine
+  ↓
+Service Layer
+  ↓
+Data Provider
+  ↓
+Supabase Mock Dataset
+```
+
+**Future Production Flow (Live APIs):**
+```
+Service Layer
+  ↓
+External Provider
+  ↓
+Google Places / Amadeus
+```
+
+### 2B. Dashboard Load Flow (Currently Implemented ✅)
 
 ```
 USER opens /dashboard
@@ -271,9 +297,10 @@ POST /api/ai/generate-itinerary  { message: string }
   │     Output: TravelIntent
   │
   ├─ STAGE 2: getRecommendedAttractions() + searchHotels()
-  │     Attractions: Google Places (cache) → rankPlaces() scorer
-  │     Restaurants: Google Places (cache) → rankPlaces() scorer
-  │     Hotels:      Amadeus API           → scoreHotel() sort
+  │     Data flow: Data Provider → Service Layer → Rec Engine
+  │     Prototype mode (`DATA_SOURCE=mock`): Supabase Mock Dataset → google-places.ts / amadeus.ts
+  │     Production mode: Google Places/Amadeus APIs → google-places.ts / amadeus.ts
+  │     (Both modes use the same abstraction and routing)
   │
   ├─ STAGE 3: buildSchedule()          ← Greedy TSPTW (pure TS)
   │     Input:  CandidatePlace[] (validated, no hallucinations)
@@ -515,20 +542,23 @@ Returns: CandidatePlace[] sorted by cosine similarity
 lib/services/google-places.ts
     │
     ▼
-1. Check cache:
-   SELECT place_id, name, lat, lng, rating, opening_hours, embedding
-   FROM places
-   WHERE place_id = $id AND last_fetched > NOW() - INTERVAL '14 days'
+1. Check DATA_SOURCE env variable:
 
-    ├── HIT → return cached data (no API call)
+    ├── IF 'mock' → Query Supabase mock dataset directly (Bypass external API)
     │
-    └── MISS
+    └── IF 'production':
           │
           ▼
-        fetch(Google Places API)
-          │
-          ▼
-        Validate response with Zod
+        2. Check cache (Supabase places table):
+           ├── HIT → return cached data
+           │
+           └── MISS
+                 │
+                 ▼
+               fetch(Google Places API)
+                 │
+                 ▼
+               Validate response with Zod
           │
           ▼
         supabase.from('places').upsert({ ...place, last_fetched: now() })
@@ -569,6 +599,7 @@ Field Mask: X-Goog-FieldMask header (only request needed fields)
 
 Used in: Stage 2 (candidate retrieval)
 Cache: Supabase places table (14-day TTL)
+Fallback: Queries Supabase seeded mock dataset if DATA_SOURCE=mock or API key is missing.
 ```
 
 #### 5C. Google Maps JavaScript SDK
@@ -593,6 +624,7 @@ Endpoints used:
   GET /v2/shopping/hotel-offers                      → pricing
 
 Used in: Stage 2 (hotel candidate retrieval)
+Fallback: Queries Supabase seeded mock dataset (category=hotel) if DATA_SOURCE=mock or credentials missing.
 ```
 
 ---

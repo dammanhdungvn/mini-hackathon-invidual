@@ -27,10 +27,11 @@ export async function searchHotels(
 ): Promise<TripHotel[]> {
   const clientId     = process.env.AMADEUS_CLIENT_ID
   const clientSecret = process.env.AMADEUS_CLIENT_SECRET
+  const isMockMode   = process.env.DATA_SOURCE === 'mock' || !clientId || !clientSecret;
 
-  if (!clientId || !clientSecret) {
-    console.warn('[amadeus] Credentials not set — using mock data')
-    return getMockHotels(cityCode)
+  if (isMockMode) {
+    console.warn('[amadeus] Mock mode enabled or credentials not set — using mock data')
+    return await getMockHotels(cityCode)
   }
 
   try {
@@ -55,7 +56,7 @@ export async function searchHotels(
     }))
   } catch (err) {
     console.error('[amadeus] Error:', err)
-    return getMockHotels(cityCode)
+    return await getMockHotels(cityCode)
   }
 }
 
@@ -73,7 +74,34 @@ async function getToken(id: string, secret: string): Promise<string> {
   return cachedToken
 }
 
-function getMockHotels(cityCode: string): TripHotel[] {
+async function getMockHotels(cityCode: string): Promise<TripHotel[]> {
+  const { createSupabaseServerClient } = await import('@/lib/supabase/server')
+  const supabase = createSupabaseServerClient()
+  
+  const { data: cached } = await supabase
+    .from('places')
+    .select('place_id, name, latitude, longitude, rating, price_level')
+    .eq('category', 'hotel')
+    // We use ilike to handle either 'PQC' or 'Phu Quoc' loose matches
+    .ilike('city', `%${cityCode === 'PQC' ? 'Phu Quoc' : cityCode}%`)
+    .limit(10)
+
+  if (cached && cached.length > 0) {
+    return cached.map((h, i) => ({
+      id: '', 
+      trip_id: '',
+      amadeus_hotel_id: h.place_id,
+      name: h.name,
+      latitude: h.latitude,
+      longitude: h.longitude,
+      rating: h.rating,
+      price_per_night: h.price_level ? h.price_level * 50 : 150, // rough estimate based on price level
+      currency: 'USD',
+      rank: i + 1
+    }))
+  }
+
+  // Final static fallback if the DB has no mock data for this city
   return [
     { id: '', trip_id: '', amadeus_hotel_id: `h1-${cityCode}`, name: `${cityCode} Grand Hotel`, latitude: 35.6762, longitude: 139.6503, rating: 4.5, price_per_night: 180, currency: 'USD', rank: 1 },
     { id: '', trip_id: '', amadeus_hotel_id: `h2-${cityCode}`, name: `${cityCode} Boutique Stay`, latitude: 35.6812, longitude: 139.6550, rating: 4.2, price_per_night: 120, currency: 'USD', rank: 2 },

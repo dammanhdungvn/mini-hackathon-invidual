@@ -6,11 +6,11 @@ import { Button } from '@/components/ui/button'
 import { Sparkles, AlertTriangle, ArrowRight } from 'lucide-react'
 
 const LOADING_STEPS = [
-  { id: 1, label: 'Stage 1: Parsing travel intent and dates...', range: [0, 20] },
-  { id: 2, label: 'Stage 2: Querying Places cache and Amadeus hotels...', range: [20, 60] },
-  { id: 3, label: 'Stage 3: Running geographical TSPTW scheduling...', range: [60, 80] },
-  { id: 4, label: 'Stage 4: Synthesizing narrative descriptions and local tips...', range: [80, 95] },
-  { id: 5, label: 'Finalizing details and creating your dashboard trip...', range: [95, 100] },
+  { id: 1, label: 'Stage 1: AI Intent Parsing & Constraint Extraction...', range: [0, 20] },
+  { id: 2, label: 'Stage 2: Retrieving Candidate Places & Live Hotel Data...', range: [20, 60] },
+  { id: 3, label: 'Stage 3: Optimizing Route via TSPTW Mathematical Solver...', range: [60, 80] },
+  { id: 4, label: 'Stage 4: LLM Synthesizing Contextual Tips & Narratives...', range: [80, 95] },
+  { id: 5, label: 'Finalizing Immutable Schedule & Dashboard Sync...', range: [95, 100] },
 ]
 
 export function NewTripForm() {
@@ -139,7 +139,7 @@ export function NewTripForm() {
           name="prompt"
           required
           rows={4}
-          placeholder="Where are you going, when, and what do you want to do? E.g., '3 days in Tokyo. I want to visit historical temples, try sushi, and experience art at a moderate pace with a mid-range budget.'"
+          placeholder="Where are you going, when, and what do you want to do? E.g., '3 days in Phu Quoc. I want to visit beautiful beaches, try local seafood, and experience nature at a moderate pace with a mid-range budget.'"
           value={message}
           onChange={(e) => {
             setMessage(e.target.value)
@@ -167,20 +167,20 @@ export function NewTripForm() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <button
             type="button"
-            onClick={() => applyTemplate('3 days in Tokyo. I want to visit historical temples, try sushi, and experience art at a moderate pace with a mid-range budget.')}
+            onClick={() => applyTemplate('3 days in Phu Quoc. I want to visit beautiful beaches, try local seafood, and experience nature at a moderate pace with a mid-range budget.')}
             className="text-left glass p-4 rounded-2xl hover:border-accent-primary/40 hover:bg-surface/30 transition-colors"
           >
             <span className="font-semibold text-primary text-xs block mb-1 text-accent-primary">
-              🟢 Tokyo Explorer
+              🟢 Phu Quoc Explorer
             </span>
             <span className="text-[11px] text-secondary line-clamp-2">
-              Happy Path: Complete trip details, generates detailed schedule + hotel matching.
+              Happy Path: Complete trip details, generates detailed schedule + hotel matching using our Mock Data Provider.
             </span>
           </button>
           
           <button
             type="button"
-            onClick={() => applyTemplate('Tokyo')}
+            onClick={() => applyTemplate('Phu Quoc')}
             className="text-left glass p-4 rounded-2xl hover:border-accent-primary/40 hover:bg-surface/30 transition-colors"
           >
             <span className="font-semibold text-primary text-xs block mb-1 text-accent-warning">

@@ -7,7 +7,7 @@ This guide contains a structured **5-minute live demo script** to showcase TripG
 ## Demo Overview (5 Minutes)
 
 - **0:00 - 1:00**: Project Intro & Concept (Relational Constraint Routing + AI Synthesis)
-- **1:00 - 2:30**: Happy Path: Creating a Trip to Tokyo via AI generation
+- **1:00 - 2:30**: Happy Path: Creating a Trip to Phu Quoc via AI generation
 - **2:30 - 3:45**: Plan Customization: Manual edits, day regeneration, and hotel swap
 - **3:45 - 4:30**: Resilience & Error Paths: Validation and API Fallbacks
 - **4:30 - 5:00**: Summary & Architecture Highlights
@@ -20,17 +20,21 @@ This guide contains a structured **5-minute live demo script** to showcase TripG
 1. Log in to the application and arrive at the dashboard `/dashboard`.
 2. *Script Highlight:* 
    > *"Welcome to TripGenius AI. Normally, travel planning involves hours of cross-referencing maps, opening hours, and hotel listings. TripGenius eliminates this by combining natural language AI with a pure mathematical schedule optimizer. Let's build a new trip."*
-3. Click on **Create New Trip** (or **Start Planning** if the dashboard is empty). You will land on `/plan/new`.
+3. Click on **Start Planning Demo** (the engaging empty state CTA). You will land on `/plan/new`.
 
 ---
 
 ### Part 2: Itinerary Generation (Happy Path)
-1. In the **New Trip Form**, click the **Tokyo Explorer** preset button. This will populate the prompt box with:
-   `3 days in Tokyo. I want to visit historical temples, try sushi, and experience art at a moderate pace with a mid-range budget.`
+1. In the **New Trip Form**, click the **Phu Quoc Explorer** preset button. This will populate the prompt box with:
+   `3 days in Phu Quoc. I want to visit beautiful beaches, try local seafood, and experience nature at a moderate pace with a mid-range budget.`
 2. Click **Generate Itinerary**.
 3. *Observe:* 
    - A beautiful glassmorphic loader screen will activate.
-   - The loader displays a real-time progress track tracking the **4-stage AI pipeline** (parsing intent -> retrieving candidates -> optimizing schedule -> synthesizing narrative tips).
+   - The loader displays a real-time progress track tracking the **4-stage AI pipeline**:
+     1. Stage 1: AI Intent Parsing & Constraint Extraction
+     2. Stage 2: Retrieving Candidate Places & Live Hotel Data
+     3. Stage 3: Optimizing Route via TSPTW Mathematical Solver
+     4. Stage 4: LLM Synthesizing Contextual Tips & Narratives
 4. Upon completion, you will be redirected to the planning workspace `/plan/[tripId]`.
 5. *Script Highlight:*
    > *"In under 3 seconds, TripGenius has analyzed our prompt, retrieved candidate places from Google, fetched real-time hotel pricing from Amadeus, built a deterministic conflict-free schedule, and had the AI write custom local tips for every single slot. Notice how items are grouped by Day, and sorted chronologically."*
@@ -40,7 +44,7 @@ This guide contains a structured **5-minute live demo script** to showcase TripG
 ### Part 3: Interactive Itinerary Editing
 1. Scroll down the daily schedule columns. Show the custom categories (blue for attraction, purple for restaurant, green for transit).
 2. **Edit Activity Time/Duration:**
-   - Click the **Edit (pencil)** icon on any activity card (e.g. *Tokyo National Museum*).
+   - Click the **Edit (pencil)** icon on any activity card (e.g. *VinWonders Phu Quoc*).
    - In the edit panel, change the start time or add a custom travel note. Click **Save**.
    - *Observe:* The changes are applied immediately, recalculating the end time and updating the card layout.
 3. **Remove Activity & Resequence:**
@@ -62,7 +66,7 @@ This guide contains a structured **5-minute live demo script** to showcase TripG
 ### Part 5: Error Paths & Safety
 To demonstrate the application's resilience, return to `/plan/new` (or the home page) and test the remaining presets:
 1. **Triggering Input Validation Error:**
-   - Click the **Validation Error** preset (populates `"Tokyo"`).
+   - Click the **Validation Error** preset (populates `"Phu Quoc"`).
    - Click **Generate Itinerary**.
    - *Observe:* The form blocks submission and displays a clear yellow alert: *"Please enter a longer prompt (minimum 5 characters)."*
 2. **Triggering AI Uncertainty / Parsing Error:**

@@ -29,17 +29,17 @@ export default async function DashboardPage() {
       </div>
 
       {!trips || trips.length === 0 ? (
-        <div className="glass p-12 text-center rounded-2xl border-dashed">
-          <div className="w-16 h-16 bg-accent-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Compass className="text-accent-primary w-8 h-8" />
+        <div className="glass p-12 text-center rounded-2xl border-dashed border-2 border-border/50 hover:border-accent-primary/30 transition-colors mt-8">
+          <div className="w-20 h-20 bg-accent-primary/10 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+            <Compass className="text-accent-primary w-10 h-10 animate-pulse" />
           </div>
-          <h3 className="text-xl font-semibold text-primary mb-2">No trips yet</h3>
-          <p className="text-secondary mb-6 max-w-md mx-auto">
-            Ready for your next adventure? Let our AI travel assistant plan the perfect itinerary for you.
+          <h3 className="text-2xl font-bold text-primary mb-3">Your Journey Begins Here</h3>
+          <p className="text-secondary mb-8 max-w-md mx-auto text-base">
+            No trips planned yet. Experience the power of our mathematical scheduling solver and AI narrative generation. Let's build your first optimized itinerary.
           </p>
           <Link href="/plan/new">
-            <Button className="bg-accent-primary hover:bg-accent-secondary text-primary rounded-xl">
-              Start Planning
+            <Button className="bg-accent-primary hover:bg-accent-secondary text-primary font-semibold py-6 px-8 rounded-xl shadow-lg shadow-accent-primary/20 hover:shadow-accent-primary/40 transition-all text-lg">
+              Start Planning Demo
             </Button>
           </Link>
         </div>

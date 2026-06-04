@@ -51,7 +51,7 @@ export async function searchPlacesNearby(
   const { data: cached } = await supabase
     .from('places')
     .select('place_id, name, category, latitude, longitude, rating, price_level, opening_hours, address')
-    .eq('city', city)
+    .ilike('city', `%${city}%`)
     .eq('category', category)
     .gte('last_fetched', ttlDate)
     .limit(maxResults)
@@ -60,8 +60,11 @@ export async function searchPlacesNearby(
 
   // 2. Live fetch
   const apiKey = process.env.GOOGLE_PLACES_API_KEY
-  if (!apiKey) {
-    console.warn('[google-places] API key not set — using mock data')
+  const isMockMode = process.env.DATA_SOURCE === 'mock' || !apiKey;
+
+  if (isMockMode) {
+    console.warn('[google-places] Mock mode enabled or API key not set — using mock data')
+    if (cached && cached.length > 0) return cached.map(toCandidatePlace)
     return getMockPlaces(city, category, maxResults)
   }
 

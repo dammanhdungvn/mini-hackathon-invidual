@@ -43,6 +43,17 @@ TripGenius AI follows the **Next.js App Router architecture** with a strict sepa
 - **All mutations via API routes.** Components never write to Supabase directly.
 - **Route groups** keep auth routes `(auth)` and protected app routes `(main)` isolated.
 
+### Data Source Architecture
+
+**Current Prototype (Mock Mode):**
+`Crawled dataset (data_hotel.py)` → `scripts/seed-mock-data.ts` (Normalization) → `supabase/seed.sql` (Mock Dataset) → Service Layer (mock mode) → Recommendation engines.
+
+**Future Production Path:**
+`Google Places API` → `google-places.ts` (Places provider interface).
+`Amadeus API` → `amadeus.ts` (Hotel provider interface).
+
+*Switching is seamless via the `DATA_SOURCE` environment variable without changing UI, planner, or recommendation logic.*
+
 ---
 
 ## 2. Folder Responsibilities
@@ -96,7 +107,12 @@ mini-hackathon-individual/
 │
 ├── supabase/
 │   ├── migrations/             # ALL schema changes as SQL migration files
+│   ├── seed.sql                # Auto-generated mock data seed script (contains mock dataset flow)
 │   └── config.toml             # Supabase local dev config
+│
+├── scripts/
+│   ├── mock-hotels.json        # Normalized mock dataset location
+│   └── seed-mock-data.ts       # Parses data_hotel.py (pipeline) and generates supabase/seed.sql
 │
 ├── docs/                       # Project planning documents
 ├── agent_docs/                 # AI agent reference docs
@@ -151,6 +167,15 @@ mini-hackathon-individual/
 | **Protected routes** | `/dashboard/*`, `/plan/*` → redirects to `/login` if unauthenticated |
 | **Auth routes** | `/login`, `/signup` → redirects to `/dashboard` if already logged in |
 | **Matcher** | All routes except `_next/static`, `_next/image`, `favicon.ico`, images |
+
+### 3.5 Services & Data Providers
+
+| Module | Responsibility | Public Functions | Dependencies |
+|---|---|---|---|
+| **Google Places** (`google-places.ts`) | Places provider interface. Fetches from Supabase mock dataset (when `DATA_SOURCE=mock`) or live API. | `searchPlacesNearby` | `supabase/server`, `zod` |
+| **Amadeus** (`amadeus.ts`) | Hotel provider interface. Fetches from Supabase mock dataset (when `DATA_SOURCE=mock`) or live API. | `searchHotels` | `supabase/server`, `zod` |
+| **Recommendations** (`recommendations.ts`) | Orchestrates candidate retrieval and scoring for attractions/restaurants WITHOUT LLM involvement. | `getRecommendedAttractions`, `getRecommendedRestaurants` | `google-places.ts`, `scorer.ts` |
+| **Hotel Recommendations** (`hotel-recommendations.ts`) | Ranks hotels and coordinates AI explanations for the top picks. | `getRecommendedHotels`, `calculateCentroid` | `amadeus.ts`, `scorer.ts`, `provider.ts` |
 
 ---
 
@@ -285,7 +310,7 @@ auth.users (Supabase managed)
                                                 │
                                                 └──► public.places (place_id FK, no cascade)
 
-public.places  ←── standalone cache table, no user ownership
+public.places  ←── standalone cache table (also hosts seeded mock data entities for MVP), no user ownership
 ```
 
 ### Table Summaries
@@ -432,8 +457,8 @@ import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 | Intent parser | `src/lib/ai/parser.ts` | parseTravelIntent (uses provider.ts) |
 | Narrative synthesizer | `src/lib/ai/synthesizer.ts` | synthesizeNarrative (uses provider.ts) |
 | All prompts | `src/lib/ai/prompts.ts` | INTENT_PARSE_PROMPT, NARRATIVE_SYNTHESIS_PROMPT, CHAT_SYSTEM_PROMPT, HOTEL_EXPLANATION_PROMPT |
-| Google Places | `src/lib/services/google-places.ts` | searchPlacesNearby (with 14-day cache) |
-| Amadeus hotels | `src/lib/services/amadeus.ts` | searchHotels — DO NOT duplicate hotel fetching |
+| Google Places | `src/lib/services/google-places.ts` | searchPlacesNearby (with 14-day cache and DB mock fallback when `DATA_SOURCE=mock`) |
+| Amadeus hotels | `src/lib/services/amadeus.ts` | searchHotels — uses DB mock data fallback when `DATA_SOURCE=mock` or API keys are missing |
 | Embeddings | `src/lib/services/embeddings.ts` | embedText, embedInterests (uses provider.ts) |
 | Attraction recommendations | `src/lib/services/recommendations.ts` | getRecommendedAttractions, getRecommendedRestaurants |
 | **Hotel recommendations** | `src/lib/services/hotel-recommendations.ts` | ⭐ getRecommendedHotels, calculateCentroid — DO NOT duplicate |
@@ -444,6 +469,23 @@ import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 | **ItineraryPanel** | `src/components/itinerary/ItineraryPanel.tsx` | Top-level panel orchestrator — DO NOT create parallel itinerary UI |
 | Shared types | `src/lib/types/trip.ts`, `place.ts` | TripHotel, RankedHotel, HotelRecommendationOptions + all other shared types |
 | **NewTripForm** | `src/components/plan/NewTripForm.tsx` | Prompt entry, preset templates, and dynamic loader |
+
+---
+
+## 8.5 AI Workflow & Hallucination Prevention
+
+**Validated Data → AI Explanation Flow**
+- **Understands Intent:** The LLM (Gemini Pro) parses user constraints but **does NOT** create places or items.
+- **Explains Recommendations:** The LLM (Gemini Flash) annotates a locked schedule with contextual tips.
+- **Strict Boundaries:** The LLM **does NOT** create fake attractions, **does NOT** create fake hotels, and **does NOT** invent ratings/prices. All entities are exclusively sourced from the validated database or external APIs.
+
+---
+
+## 8.6 Testing Strategy Overview
+
+- **Seed Tests:** Verified schema match and mock data parsing inside `scripts/`.
+- **Provider Tests:** `mock-data.test.ts` validates that both Amadeus and Google Places fallback seamlessly to Supabase mock data when APIs are disconnected.
+- **Recommendation Tests:** `recommendations.test.ts` and `hotel-recommendations.test.ts` verify the sorting logic and retrieval without LLM involvement.
 
 ### DO NOT create new auth forms
 - Login form: `src/app/(auth)/login/page.tsx` already exists
