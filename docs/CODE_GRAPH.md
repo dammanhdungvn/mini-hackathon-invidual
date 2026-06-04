@@ -287,7 +287,37 @@ POST /api/ai/generate-itinerary  { message: string }
   Response: { tripId, title, destination, hotels[], days[] }
 ```
 
-### 2C. Streaming Chat Flow (Phase 3 — TO BE BUILT)
+### 2C. Itinerary Editor Flow (✅ Built)
+
+```
+USER interacts with ItineraryPanel
+  │
+  ├─ Action: Edit single activity (time/duration/note)
+  │    → PATCH /api/trips/[id]/items/[itemId]
+  │    → Validate via lib/itinerary/operations.ts
+  │    → Recalculate end_time
+  │    → Update DB item
+  │
+  ├─ Action: Remove single activity
+  │    → DELETE /api/trips/[id]/items/[itemId]
+  │    → Update DB: delete item
+  │    → Update DB: resequence siblings (removeItemAndResequence)
+  │    → NOTE: place cache is untouched
+  │
+  ├─ Action: Drag-and-drop reorder
+  │    → PATCH /api/trips/[id]/items
+  │    → Bulk batch update sequence_num
+  │
+  └─ Action: Regenerate Day
+       → POST /api/ai/regenerate-day
+       → Load locked items + trip intent
+       → Reuse Stage 2 (get candidates)
+       → Reuse Stage 3 (buildSchedule for 1 day)
+       → Reuse Stage 4 (synthesizeNarrative for 1 day)
+       → Replace day items in DB
+```
+
+### 2D. Streaming Chat Flow (Phase 3 — TO BE BUILT)
 
 ```
 USER types in ChatPanel

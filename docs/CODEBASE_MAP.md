@@ -318,17 +318,20 @@ CREATE INDEX ON public.trips (user_id, status);
 |---|---|---|---|
 | `POST` | `/api/auth/signout` | Sign out + clear session | ✅ |
 | `POST` | `/api/ai/generate-itinerary` | Full 4-stage AI pipeline | ✅ |
+| `POST` | `/api/ai/regenerate-day` | Partial regeneration (single day) | ✅ |
 | `POST` | `/api/ai/chat` | Streaming conversational AI | ✅ |
 | `GET/POST` | `/api/trips` | List / create trips | ✅ |
+| `GET/PATCH/DELETE` | `/api/trips/[id]` | Get, update, delete a trip | ✅ |
+| `PATCH` | `/api/trips/[id]/items` | Bulk reorder itinerary items | ✅ |
+| `PATCH/DELETE` | `/api/trips/[id]/items/[itemId]` | Edit / remove a single item | ✅ |
+| `GET/PUT` | `/api/trips/[id]/hotels` | Get / save selected hotel | ✅ |
+| `GET` | `/api/hotels/search` | Amadeus hotel search | ✅ |
 
 ### Remaining API Routes (Phase 3)
 
 | Method | Route | Purpose | Auth |
 |---|---|---|---|
-| `GET/PATCH/DELETE` | `/api/trips/[id]` | Get, update, delete a trip | ✅ |
-| `PATCH` | `/api/trips/[id]/items` | Bulk reorder itinerary items | ✅ |
 | `GET` | `/api/places/search` | Google Places search with cache | ✅ |
-| `GET` | `/api/hotels/search` | Amadeus hotel search | ✅ |
 
 > [!IMPORTANT]
 > **All API routes MUST follow the auth-first pattern:**
