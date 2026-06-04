@@ -1,6 +1,6 @@
 # AGENTS.md — TripGenius AI
-> **Master AI Coding Instructions** for all agents: Antigravity, Codex, Claude Code.  
-> Read this file before writing any code. Follow every rule here exactly.
+> **Master AI Coding Instructions** for all agents: Antigravity, Codex, Claude Code.
+> **⚠️ MANDATORY:** Every session must begin by loading the four context documents listed in Section 3. No code may be written until this is done.
 
 ---
 
@@ -23,41 +23,137 @@
 Before writing any code, follow this mandatory mental model:
 
 ```
-UNDERSTAND → LOCATE → PLAN → CODE → VERIFY → EXPLAIN
+LOAD CONTEXT → INSPECT → LOCATE → PLAN → CODE → VERIFY → UPDATE MEMORY
 ```
 
-1. **UNDERSTAND** — Read the task carefully. If ambiguous, check the PRD and TECH_DESIGN before assuming.
-2. **LOCATE** — Find existing code first. Never create a duplicate. Search `lib/`, `components/`, `app/api/`.
-3. **PLAN** — List the files you will create or modify before touching anything.
-4. **CODE** — Write the implementation following all rules in Section 4.
-5. **VERIFY** — Check: Does it compile? Does it break existing types? Does it follow the schema?
-6. **EXPLAIN** — Add a short comment above every non-trivial function describing what it does.
+1. **LOAD CONTEXT** — Execute the Session Start Protocol in Section 3 first. No exceptions.
+2. **INSPECT** — Read the actual source files related to the task. Understand what already exists.
+3. **LOCATE** — Find existing code before creating anything. Search `lib/`, `components/`, `app/api/`.
+4. **PLAN** — List the exact files you will create or modify. Confirm none already exist.
+5. **CODE** — Write the implementation following all rules in Section 5.
+6. **VERIFY** — Check: Does it compile? Does it break existing types? Does it follow the schema?
+7. **UPDATE MEMORY** — After every feature, update `docs/CODEBASE_MAP.md` and `docs/CODE_GRAPH.md`.
 
 ---
 
-## 3. Context Files Reference
+## 3. Mandatory Session Start Protocol
 
-Always read these files before working on a feature:
+> [!IMPORTANT]
+> **Every AI coding session MUST begin with steps 1–4 below, in order. Do not skip, do not reorder. No code may be written until all four documents are loaded.**
+
+### Step 1 — Load Codebase Map
+Read `docs/CODEBASE_MAP.md` in full.
+- Know every existing module, component, service, and utility.
+- Check the **DO NOT RECREATE** section before creating any file.
+
+### Step 2 — Load Code Graph
+Read `docs/CODE_GRAPH.md` in full.
+- Know the exact insertion point for the feature you are building.
+- Know the data flow this feature participates in.
+- Know which existing files to modify vs. which new files to create.
+
+### Step 3 — Load Technical Design
+Read `docs/TECH_DESIGN.md` for any section relevant to your task.
+- Confirm the architecture matches what you are about to implement.
+- If your plan deviates from TECH_DESIGN, **stop and ask for approval**. Do not proceed.
+
+### Step 4 — Load Product Requirements
+Read `docs/PRD-AITravelAssistant.md` for the feature area you are working on.
+- Confirm acceptance criteria before building.
+- Do not build anything outside MVP scope without explicit user approval.
+
+### Pre-Code Inspection Checklist
+After loading context, before writing the first line of code:
+
+```
+[ ] I have read CODEBASE_MAP.md — I know what already exists
+[ ] I have read CODE_GRAPH.md — I know the correct insertion point
+[ ] I searched lib/, components/, app/api/ for existing implementations
+[ ] I confirmed no existing module handles this responsibility
+[ ] I listed the exact files I will create or modify
+[ ] I confirmed all new files follow agent_docs/code_patterns.md
+[ ] I confirmed no new infrastructure (DB, cache, service) is needed
+```
+
+### Reference Files (load when relevant)
 
 | File | When to Read |
 |---|---|
-| `docs/CODEBASE_MAP.md` | **FIRST — before any coding task** (duplicate prevention) |
-| `docs/CODE_GRAPH.md` | **SECOND — before adding any new module or API route** (insertion points) |
-| `docs/TECH_DESIGN.md` | Before any architectural decision |
-| `docs/PRD-AITravelAssistant.md` | Before building any user-facing feature |
-| `lib/types/trip.ts` | Before working with any trip, day, or itinerary item data |
+| `docs/CODEBASE_MAP.md` | **FIRST — every session, before any code** |
+| `docs/CODE_GRAPH.md` | **SECOND — every session, before any code** |
+| `docs/TECH_DESIGN.md` | **THIRD — every session, before any code** |
+| `docs/PRD-AITravelAssistant.md` | **FOURTH — every session, before any code** |
+| `lib/types/trip.ts` | Before working with trip, day, or itinerary item data |
 | `lib/types/place.ts` | Before working with places, hotels, or map markers |
-| `lib/ai/prompts.ts` | Before modifying any LLM prompt |
-| `supabase/migrations/` | Before adding or changing any database table |
+| `lib/ai/prompts.ts` | Before touching any LLM prompt |
+| `supabase/migrations/` | Before any database table change |
 | `agent_docs/code_patterns.md` | Before writing any service, component, or API route |
+| `agent_docs/tech_stack.md` | Before installing any new package |
 
 ---
 
-## 4. Universal Coding Rules
+## 4. Hard Rules — NEVER VIOLATE
+
+These rules apply to ALL agents (Antigravity, Codex, Claude Code) at ALL times, with no exceptions.
+
+### 4.1 Inspect Before Creating
+
+- **Search before creating.** Before creating any file, prove it does not already exist.
+  ```
+  # Always search first:
+  lib/          — services, utilities, types, AI helpers
+  components/   — UI components, layout shells
+  app/api/      — API route handlers
+  ```
+- **Extend existing modules.** If a module handles similar logic, add to it. Do not create a parallel module.
+- **Reuse existing services.** If `lib/services/google-places.ts` already fetches places, never fetch places anywhere else.
+
+### 4.2 Never Duplicate
+
+| ❌ Never Create | ✅ Correct Action |
+|---|---|
+| A second Supabase client instantiation | Import from `lib/supabase/client.ts` or `server.ts` |
+| A second prompt file | Add to `lib/ai/prompts.ts` |
+| A second type definition for the same shape | Add to the existing file in `lib/types/` |
+| A second styling utility | Use existing `cn()` from `lib/utils.ts` |
+| A parallel fetch for Google Places | Use `lib/services/google-places.ts` |
+| A second auth check pattern | Copy the pattern from `agent_docs/code_patterns.md` |
+
+### 4.3 Never Change the Stack Without Approval
+
+- **Do not install packages** that are not in `agent_docs/tech_stack.md` without explicit user approval.
+- **Do not introduce new infrastructure** (Redis, additional databases, third-party SaaS) without updating `docs/TECH_DESIGN.md` first and receiving explicit approval.
+- **Do not change the AI model** assignments (Pro for parsing, Flash for synthesis) without approval.
+- **Do not add a `pages/` directory.** App Router only. All routes in `app/`.
+
+### 4.4 Mandatory Post-Feature Updates
+
+After every completed feature, before marking done:
+
+```
+[ ] Update docs/CODEBASE_MAP.md
+      → Add any new modules to Section 3 (Existing Modules)
+      → Add any new components to Section 4 (Component Inventory)
+      → Add any new API routes to Section 6 (API Map)
+      → Add new files to Section 8 (DO NOT RECREATE list)
+
+[ ] Update docs/CODE_GRAPH.md
+      → Add new dependency edges to Section 1 (Module Dependency Graph)
+      → Document any new data flow in Section 2
+      → Update Section 7 (Integration Insertion Summary table)
+
+[ ] Run: npm run lint
+[ ] Run: npx tsc --noEmit
+[ ] Run: npm run test (if tests exist for the changed module)
+```
+
+---
+
+## 5. Universal Coding Rules
 
 These rules apply to ALL agents (Antigravity, Codex, Claude Code) at ALL times.
 
-### 4.1 Architecture Rules — NEVER VIOLATE
+### 5.1 Architecture Rules — NEVER VIOLATE
 
 - **Follow `docs/TECH_DESIGN.md` exactly.** Do not introduce new infrastructure, services, or databases not listed there.
 - **Use Next.js App Router only.** Do not use the `pages/` directory. All routes go in `app/`.
@@ -66,7 +162,7 @@ These rules apply to ALL agents (Antigravity, Codex, Claude Code) at ALL times.
 - **All database mutations go through API routes.** React components and hooks must never call Supabase directly for writes; they call `/api/` endpoints.
 - **Auth is always enforced.** Every API route must verify the session with the Supabase server client before processing.
 
-### 4.2 TypeScript Rules
+### 5.2 TypeScript Rules
 
 - **Strict mode is always on.** `"strict": true` in `tsconfig.json`. No `any` types.
 - **All shared types live in `lib/types/`.** If a type is used in more than one file, extract it.
@@ -84,7 +180,7 @@ export type ItemType = 'attraction' | 'restaurant' | 'hotel' | 'transit'
 const tier: string = 'budget'
 ```
 
-### 4.3 Component Rules
+### 5.3 Component Rules
 
 - **Server Components by default.** Only add `'use client'` when you need browser APIs, event handlers, or React hooks (`useState`, `useEffect`, etc.).
 - **One responsibility per component.** If a component file exceeds 200 lines, it should be split.
@@ -102,7 +198,7 @@ interface ActivityCardProps {
 export function ActivityCard({ item, onSwap }: ActivityCardProps) { ... }
 ```
 
-### 4.4 AI & LLM Rules — CRITICAL
+### 5.4 AI & LLM Rules — CRITICAL
 
 - **All prompts are centralized in `lib/ai/prompts.ts`.** No prompt strings anywhere else.
 - **The LLM cannot create places.** Stage 4 (narrative synthesis) receives a locked, pre-validated schedule. The LLM is only allowed to annotate it — never add, remove, or rename places.
@@ -123,7 +219,7 @@ const result = await generateText({
 })
 ```
 
-### 4.5 Database Rules
+### 5.5 Database Rules
 
 - **All schema changes are migrations.** Add a new file to `supabase/migrations/`. Never modify the database directly via the dashboard for schema changes.
 - **Use the exact column names from `docs/TECH_DESIGN.md`.** Do not rename or add columns without updating the schema, types, and migration files simultaneously.
@@ -144,7 +240,7 @@ const { data: cached } = await supabase
 const { data } = await supabase.from('places').select('*')
 ```
 
-### 4.6 API Route Rules
+### 5.6 API Route Rules
 
 - **Auth check is first.** Every route handler must validate the Supabase session before any other logic.
 - **Return consistent error shapes.** All errors return `{ error: string, code: string }` with appropriate HTTP status codes.
@@ -164,7 +260,7 @@ export async function GET(request: Request) {
 }
 ```
 
-### 4.7 Solver Rules
+### 5.7 Solver Rules
 
 - **The scheduling solver (`lib/solver/tsptw.ts`) is pure TypeScript.** No external API calls inside the solver.
 - **Solver input is always pre-validated.** The solver receives a `CandidatePlace[]` array where all places have confirmed coordinates, opening hours, and ratings.
